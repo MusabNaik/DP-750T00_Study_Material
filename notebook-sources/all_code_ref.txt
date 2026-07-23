@@ -1,0 +1,3864 @@
+
+================================================================================
+# 01-explore-azure-databricks
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Running Python Code
+
+In Azure Databricks, notebooks support multiple programming languages. Python is the most commonly used language for data engineering tasks.
+
+**Scenario:** You are a data engineer at *CityMoves Transit*. Your team wants a quick way to display summary information about a specific transit route in the console during development.
+
+**Your task:** In the cell below, write Python code that:
+
+1. Defines three variables: `route_name`, `origin`, and `destination` with values of your choice (use the routes from the `routes.csv` file as inspiration).
+2. Prints a formatted message that summarises the route. For example:
+   `Route: City Express | From: Central Station → To: Airport Terminal`
+
+> 💬 **Genie Code tip:** Open Genie Code panel (click the ![assistant-icon](https://raw.githubusercontent.com/MicrosoftLearning/DP-750T00-Implement-Data-Engineering-Solutions-using-Azure-Databricks/refs/heads/main/Allfiles/media/databricks-assistant.svg) icon on the cell) and type:
+> *"Write Python code to define three route variables and print a formatted summary message"*
+> Use the suggestion as a starting point, then personalise the values.
+
+--- Cell 2 (code) ---
+# TODO: Define your route variables and print a formatted summary message
+
+--- Cell 3 (markdown) ---
+## Exercise 2: Running SQL Commands
+
+Azure Databricks notebooks natively support SQL alongside Python. You can switch the language of any cell using **magic commands** — special directives that start with `%`. For example, `%sql` tells Databricks to interpret the cell as SQL.
+
+**Scenario:** The CityMoves Transit operations team works primarily with SQL. You want to demonstrate that SQL works seamlessly in the same notebook where you write Python.
+
+**Your task:** In the cell below, use the `%sql` magic command to write a SQL statement that:
+
+1. Returns the current date and time.
+2. Returns a label such as `'CityMoves Transit'` as a column called `system_name`.
+
+The result should be a single-row table with at least two columns.
+
+> 💬 **Genie Code tip:** Ask Genie Code:
+> *"Write a SQL SELECT statement in a Databricks notebook that returns the current timestamp and a string literal as named columns"*
+> Remember to start your cell with `%sql`.
+
+--- Cell 4 (code) ---
+# TODO: Use the %sql magic command and write a SQL query
+# Hint: start with %sql on the first line, then write your SELECT statement
+
+--- Cell 5 (markdown) ---
+## Exercise 3: Documenting with Markdown
+
+Notebooks in Azure Databricks can contain **Markdown cells** — cells that render formatted text, headings, bullet points, links, and even images. Markdown documentation makes notebooks easier to read and share with colleagues.
+
+**Scenario:** You are preparing this notebook to share with the rest of the CityMoves Transit data team. You want to add a proper introduction cell that explains the purpose of the notebook.
+
+**Your task:** Edit the cell below (which is currently a Markdown cell with placeholder content) to include:
+
+1. A top-level heading (`#`) that names this notebook.
+2. A short paragraph (2–3 sentences) describing the purpose of the notebook in the context of CityMoves Transit.
+3. A bulleted list (`-`) of at least three things a reader will find in this notebook.
+
+> 💬 **Genie Code tip:** Select this markdown cell and ask Genie Code:
+> *"Write a Markdown introduction cell for a data engineering notebook about a public transit system called CityMoves Transit"*
+> Refine the generated text as you see fit.
+
+================================================================================
+# 02-select-and-configure-compute
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 3: Install Libraries Notebook-Scoped
+
+At HealthBridge Analytics, different teams sometimes need different versions of the same library. Rather than creating a new cluster for every variation, you can install libraries **notebook-scoped** — they apply only to the current notebook session and do not affect other users or notebooks on the same compute resource.
+
+In this exercise, you install the `faker` library notebook-scoped and verify it works correctly.
+
+[faker](https://faker.readthedocs.io/) is a Python library that generates realistic fake data — such as names, addresses, phone numbers, dates, and more — for use in testing, prototyping, and seeding databases. It supports many locales and data categories, making it easy to produce large volumes of plausible synthetic data without using real personal information.
+
+--- Cell 2 (markdown) ---
+### Task 3.1 — Install the `faker` library notebook-scoped
+
+Your team relies on `faker` to generate synthetic patient records for pipeline testing. Install it as a notebook-scoped library so the package is available to this notebook only and doesn't affect other users sharing the same compute.
+
+> 🤖 **Genie Code tip:** Open Genie Code panel (click the ![assistant-icon](https://raw.githubusercontent.com/MicrosoftLearning/DP-750T00-Implement-Data-Engineering-Solutions-using-Azure-Databricks/refs/heads/main/Allfiles/media/genie-code.svg) icon on the cell) and use the prompt below to get started:
+> *"How do I install a Python package notebook-scoped in Databricks using a magic command?"*
+
+**Hint:** Use a `%pip` magic command to install the package. Pinning an exact version (e.g., `faker==40.8.0`) is a good practice for reproducibility.
+
+--- Cell 3 (code) ---
+# TODO: Install faker==40.8.0 notebook-scoped
+
+--- Cell 4 (markdown) ---
+### Task 3.2 — Verify the installation
+
+Before using `faker` in a real pipeline, confirm it was installed correctly by:
+
+1. Importing the `Faker` class from the `faker` library.
+2. Creating a `Faker` instance.
+3. Printing a randomly generated **full name** and **date of birth**.
+
+> 🤖 **Genie Code tip:**
+> *"Show me a Python example of generating a random name and date of birth using the Faker library."*
+
+--- Cell 5 (code) ---
+# TODO: Import Faker, create an instance, and print a generated name and date of birth
+
+--- Cell 6 (markdown) ---
+## Exercise 4: Generate and Analyze Synthetic Patient Data
+
+Now that `faker` is installed, put it to work. Your team needs a synthetic dataset of patient admission records to test a new data pipeline. The data must look realistic enough to validate transformations and aggregations, but must contain **no real patient information** to comply with HIPAA policies.
+
+In this exercise, you generate a synthetic dataset and run a basic analysis on it.
+
+--- Cell 7 (markdown) ---
+### Task 4.1 — Generate a synthetic patient admissions DataFrame
+
+Use `faker` and the Spark session (`spark`) to create a **Spark DataFrame** with **100 synthetic patient admission records**. Each record must include:
+
+| Column | Description |
+|---|---|
+| `patient_id` | Integer, 1 to 100 |
+| `full_name` | Randomly generated full name |
+| `date_of_birth` | Random date between `1940-01-01` and `2005-12-31`, as a string |
+| `admission_date` | Random date between `2023-01-01` and `2025-12-31`, as a string |
+| `diagnosis_code` | One of: `I21`, `J18`, `E11`, `K80`, `N39` (randomly chosen) |
+
+Display the first 10 rows of the resulting DataFrame.
+
+> 🤖 **Genie Code tip:**
+> *"How do I generate a list of Python dictionaries using the Faker library, then create a PySpark DataFrame from that list?"*
+>
+> **Hint:** Use `faker.date_of_birth()` with `minimum_age` and `maximum_age` parameters, or `faker.date_between()` with `start_date` and `end_date`. Use `random.choice()` for the diagnosis code.
+
+--- Cell 8 (code) ---
+# TODO: Generate 100 synthetic patient records and create a Spark DataFrame
+# Display the first 10 rows
+
+--- Cell 9 (markdown) ---
+### Task 4.2 — Analyze admissions by diagnosis code
+
+The clinical informatics team wants to know which diagnosis codes appear most frequently in the admission data. Using the Spark DataFrame you created in Task 4.1:
+
+1. Count the number of admissions per `diagnosis_code`.
+2. Order the results from **most to least** admissions.
+3. Display the result.
+
+> 🤖 **Genie Code tip:**
+> *"How do I group by a column, count occurrences, and sort the result in descending order using PySpark DataFrame API?"*
+
+--- Cell 10 (code) ---
+# TODO: Count admissions per diagnosis_code, ordered from most to least
+
+================================================================================
+# 03-create-and-organize-objects-in-unity-catalog
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set Up the Catalog Structure
+
+You are a data engineer at **Lakeside University**, a mid-sized institution digitizing its academic operations. Your team is building a data platform in Azure Databricks and Unity Catalog to manage student records, course catalogues, and enrollment data.
+
+In this exercise, you create the top-level namespace structure: one `catalog` and three `schemas` following the **medallion architecture** naming pattern.
+
+Here's the full Unity Catalog structure you will create:
+
+```txt
+
+Unity Catalog
+└── edu_dev  [catalog]
+    │   tags: environment=development | university=lakeside | data_classification=internal
+    │
+    ├── bronze  [schema]
+    │   └── raw_files/  [managed volume]
+    │       └── students.csv
+    │
+    ├── silver  [schema]
+    │   ├── students  [table]
+    │   │   ├── student_id       BIGINT  NOT NULL  ← PK
+    │   │   ├── first_name       STRING
+    │   │   ├── last_name        STRING
+    │   │   ├── email            STRING
+    │   │   ├── enrollment_year  INT
+    │   │   ├── program          STRING
+    │   │   └── phone_number     STRING  (added in Exercise 6)
+    │   │
+    │   ├── courses  [table]
+    │   │   ├── course_id    BIGINT  NOT NULL  ← PK
+    │   │   ├── course_name  STRING
+    │   │   ├── department   STRING
+    │   │   └── credits      INT
+    │   │
+    │   ├── enrollments  [table]
+    │   │   ├── enrollment_id  BIGINT  NOT NULL  ← PK
+    │   │   ├── student_id     BIGINT            → FK → students.student_id
+    │   │   ├── course_id      BIGINT            → FK → courses.course_id
+    │   │   ├── semester       STRING
+    │   │   └── grade          DECIMAL(4,2)
+    │   │
+    │   ├── vw_student_enrollments  [view]
+    │   │   └── joins students + courses + enrollments
+    │   │
+    │   └── get_grade_classification(grade)  [function]
+    │       └── returns STRING  (A / B / C / D / F)
+    │
+    └── gold  [schema]
+        └── vw_department_enrollment_stats  [materialized view]
+            └── aggregates enrollments + courses
+                (department, total_enrollments, avg_grade, distinct_students)
+```
+
+--- Cell 2 (markdown) ---
+### Task 1.1 — Create the development catalog
+
+Create a catalog called `edu_dev` with a descriptive comment. This catalog serves as the **development environment** for Lakeside University's data platform.
+
+**Naming convention reminders:**
+- Use lowercase with underscores
+- No periods, spaces, forward slashes, or control characters
+
+> 🤖 **Genie Code tip:** Ask Genie Code:
+> *"How do I create a Unity Catalog catalog in Databricks SQL with a comment?"*
+
+**Hint:** Use the SQL command `CREATE CATALOG`.
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+--- Cell 4 (code) ---
+%sql
+-- TODO: Create the edu_dev catalog with a descriptive comment
+
+--- Cell 5 (markdown) ---
+### Task 1.2 — Create medallion schemas
+
+Within the `edu_dev` catalog, create three schemas that implement the **medallion architecture**:
+
+| Schema | Purpose |
+|--------|---------|
+| `bronze` | Raw ingested data — unmodified source files |
+| `silver` | Cleaned, validated, and enriched data |
+| `gold` | Aggregated, analytics-ready data |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"Show me how to create multiple schemas in a Databricks Unity Catalog catalog using SQL."*
+
+**Hint:** Use `CREATE SCHEMA IF NOT EXISTS catalog.schema_name` for each schema.
+
+--- Cell 6 (code) ---
+%sql
+-- TODO: Create the bronze, silver, and gold schemas inside edu_dev
+
+--- Cell 7 (markdown) ---
+## Exercise 2: Create Tables with Constraints
+
+With the catalog structure in place, create the core tables for Lakeside University's academic data in the `silver` schema. You'll define **primary key** and **foreign key** constraints to document the data model. Note that in Unity Catalog, these constraints are informational — they help optimize queries but do not enforce referential integrity at write time.
+
+--- Cell 8 (markdown) ---
+### Task 2.1 — Create the `students` table
+
+Create a managed Delta table `edu_dev.silver.students` to store student records with the following columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `student_id` | BIGINT | Unique student identifier (primary key) |
+| `first_name` | STRING | Student's first name |
+| `last_name` | STRING | Student's last name |
+| `email` | STRING | University email address |
+| `enrollment_year` | INT | Year the student enrolled |
+| `program` | STRING | Degree program |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a managed Delta table with a primary key constraint in Unity Catalog?"*
+
+**Hint:** Add `CONSTRAINT students_pk PRIMARY KEY (student_id)` at the end of the column list.
+
+--- Cell 9 (code) ---
+%sql
+-- TODO: Create edu_dev.silver.students with a primary key constraint
+
+--- Cell 10 (markdown) ---
+### Task 2.2 — Create the `courses` table
+
+Create `edu_dev.silver.courses` with the following columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `course_id` | BIGINT | Unique course identifier (primary key) |
+| `course_name` | STRING | Full name of the course |
+| `department` | STRING | Academic department offering the course |
+| `credits` | INT | Number of academic credits |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"Write a CREATE TABLE statement for a courses table in Databricks Unity Catalog with a primary key constraint."*
+
+--- Cell 11 (code) ---
+%sql
+-- TODO: Create edu_dev.silver.courses with a primary key constraint
+
+--- Cell 12 (markdown) ---
+### Task 2.3 — Create the `enrollments` table with foreign keys
+
+Create `edu_dev.silver.enrollments` to record which students are enrolled in which courses. This table must reference both `students` and `courses` via foreign key constraints.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `enrollment_id` | BIGINT | Unique enrollment record (primary key) |
+| `student_id` | BIGINT | References `students.student_id` |
+| `course_id` | BIGINT | References `courses.course_id` |
+| `semester` | STRING | Academic semester (e.g., `Spring 2023`) |
+| `grade` | DECIMAL(4,2) | Numerical grade on a 0.0–10.0 scale |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I add foreign key constraints referencing other tables when creating a table in Databricks Unity Catalog?"*
+
+**Hint:** Use `CONSTRAINT <name> FOREIGN KEY (<col>) REFERENCES <catalog>.<schema>.<table>(<col>)` for each foreign key.
+
+--- Cell 13 (code) ---
+%sql
+-- TODO: Create edu_dev.silver.enrollments with primary key and two foreign key constraints
+
+--- Cell 14 (markdown) ---
+### Sample data — run this cell
+
+The following cell inserts sample data into your three tables. **Run it without modification** before continuing to Exercise 3.
+
+--- Cell 15 (code) ---
+%sql
+-- Populate students
+INSERT INTO edu_dev.silver.students VALUES
+(1001, 'Emma',   'Watson',    'emma.watson@lakeside.edu',    2022, 'Computer Science'),
+(1002, 'Liam',   'Ahmed',     'liam.ahmed@lakeside.edu',     2023, 'Data Science'),
+(1003, 'Sofia',  'Chen',      'sofia.chen@lakeside.edu',     2021, 'Mathematics'),
+(1004, 'James',  'Okonkwo',   'james.okonkwo@lakeside.edu',  2022, 'Computer Science'),
+(1005, 'Aisha',  'Patel',     'aisha.patel@lakeside.edu',    2023, 'Data Science'),
+(1006, 'Noah',   'Yamamoto',  'noah.yamamoto@lakeside.edu',  2020, 'Mathematics'),
+(1007, 'Olivia', 'Kowalski',  'olivia.kowalski@lakeside.edu',2021, 'Computer Science'),
+(1008, 'Carlos', 'Reyes',     'carlos.reyes@lakeside.edu',   2022, 'Data Science'),
+(1009, 'Mei',    'Lindqvist', 'mei.lindqvist@lakeside.edu',  2023, 'Mathematics'),
+(1010, 'Jake',   'OBrien',    'jake.obrien@lakeside.edu',    2020, 'Computer Science');
+
+-- Populate courses
+INSERT INTO edu_dev.silver.courses VALUES
+(101, 'Introduction to Programming',   'Computer Science', 3),
+(102, 'Data Structures',               'Computer Science', 4),
+(103, 'Statistics for Data Science',   'Data Science',     3),
+(104, 'Machine Learning Fundamentals', 'Data Science',     4),
+(105, 'Calculus I',                    'Mathematics',      4),
+(106, 'Linear Algebra',                'Mathematics',      3);
+
+-- Populate enrollments
+INSERT INTO edu_dev.silver.enrollments VALUES
+(1,  1001, 101, 'Spring 2023', 8.50),
+(2,  1001, 102, 'Fall 2023',   7.80),
+(3,  1002, 103, 'Spring 2023', 9.20),
+(4,  1002, 104, 'Fall 2023',   6.50),
+(5,  1003, 105, 'Spring 2022', 7.00),
+(6,  1003, 106, 'Fall 2022',   8.00),
+(7,  1004, 101, 'Fall 2022',   6.80),
+(8,  1005, 103, 'Spring 2023', 9.00),
+(9,  1006, 105, 'Fall 2020',   7.50),
+(10, 1007, 102, 'Spring 2022', 8.20),
+(11, 1008, 104, 'Fall 2023',   7.30),
+(12, 1009, 106, 'Spring 2023', 8.80),
+(13, 1010, 101, 'Fall 2021',   5.50),
+(14, 1004, 102, 'Spring 2023', 7.10),
+(15, 1005, 104, 'Fall 2023',   8.90);
+
+--- Cell 16 (markdown) ---
+## Exercise 3: Create Views
+
+Views provide a virtual layer over your tables, simplifying access to joined data and pre-computing expensive aggregations. In this exercise, you create a **standard view** for combined enrollment records and a **materialized view** in the `gold` schema to serve the Lakeside University analytics team with pre-aggregated department statistics.
+
+--- Cell 17 (markdown) ---
+### Task 3.1 — Create a standard view
+
+Create a view `edu_dev.silver.vw_student_enrollments` that presents a combined, human-readable view of student enrollment records. It should include:
+
+- Student full name (concatenate `first_name` and `last_name` with a space between them)
+- Student `email`
+- `course_name`
+- `department`
+- `semester`
+- `grade`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"Write a SQL view in Azure Databricks that joins three tables: students, courses, and enrollments"*
+
+**Hint:** Use `CONCAT(first_name, ' ', last_name)` or the `||` operator to combine names. You need to join all three silver tables.
+
+--- Cell 18 (code) ---
+%sql
+-- TODO: Create the edu_dev.silver.vw_student_enrollments view
+-- Join students, courses, and enrollments; include full_name, email, course_name, department, semester, grade
+
+--- Cell 19 (markdown) ---
+### Task 3.2 — Create a materialized view for department statistics
+
+Create a materialized view `edu_dev.gold.vw_department_enrollment_stats` that pre-computes the following per academic department:
+
+| Output column | Description |
+|--------------|-------------|
+| `department` | Academic department name |
+| `total_enrollments` | Total number of enrollment records |
+| `avg_grade` | Average grade, rounded to 2 decimal places |
+| `distinct_students` | Number of unique students enrolled |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"What is the syntax for creating a materialized view in Azure Databricks that aggregates data from two joined tables?"*
+
+**Hint:** Use `CREATE MATERIALIZED VIEW`, join `enrollments` with `courses`, and use `COUNT()`, `ROUND(AVG(...), 2)`, and `COUNT(DISTINCT ...)`.
+
+> [!NOTE]
+> Materialized views require a SQL warehouse to run. If this cell fails, check the compute selector at the top of the notebook and switch from **Serverless** compute to a **Serverless SQL warehouse**.
+
+--- Cell 20 (code) ---
+%sql
+-- TODO: Create the edu_dev.gold.vw_department_enrollment_stats materialized view
+
+--- Cell 21 (markdown) ---
+**✅ Test your materialized view** — Run the following query to verify it returns per-department aggregates:
+
+You should see one row per academic department with columns for `total_enrollments`, `avg_grade`, and `distinct_students`.
+
+--- Cell 22 (code) ---
+%sql
+SELECT * FROM edu_dev.gold.vw_department_enrollment_stats;
+
+--- Cell 23 (markdown) ---
+## Exercise 4: Create a Volume and Read Files
+
+Volumes extend Unity Catalog governance to files, not just structured tables. In this exercise, you create a **managed volume** in the `bronze` schema to serve as a landing zone for raw CSV files — simulating files arriving from Lakeside University's external student information system.
+
+--- Cell 24 (markdown) ---
+### Task 4.1 — Create a managed volume
+
+Create a managed volume named `raw_files` in the `edu_dev.bronze` schema. This will serve as the landing area for raw data files.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a managed volume in Unity Catalog using a SQL statement?"*
+
+**Hint:** Use `CREATE VOLUME IF NOT EXISTS <catalog>.<schema>.<volume>`.
+
+--- Cell 25 (code) ---
+%sql
+-- TODO: Create the raw_files managed volume in edu_dev.bronze
+
+--- Cell 26 (markdown) ---
+### Task 4.2 — Write a CSV file to the volume
+
+The following Python cell writes a sample student CSV file directly into your new volume. **Run it without modification.**
+
+--- Cell 27 (code) ---
+# Write a sample student CSV file to the volume — run this cell without modification
+csv_content = """student_id,first_name,last_name,email,enrollment_year,program
+1001,Emma,Watson,emma.watson@lakeside.edu,2022,Computer Science
+1002,Liam,Ahmed,liam.ahmed@lakeside.edu,2023,Data Science
+1003,Sofia,Chen,sofia.chen@lakeside.edu,2021,Mathematics
+1004,James,Okonkwo,james.okonkwo@lakeside.edu,2022,Computer Science
+1005,Aisha,Patel,aisha.patel@lakeside.edu,2023,Data Science
+1006,Noah,Yamamoto,noah.yamamoto@lakeside.edu,2020,Mathematics
+1007,Olivia,Kowalski,olivia.kowalski@lakeside.edu,2021,Computer Science
+1008,Carlos,Reyes,carlos.reyes@lakeside.edu,2022,Data Science
+1009,Mei,Lindqvist,mei.lindqvist@lakeside.edu,2023,Mathematics
+1010,Jake,OBrien,jake.obrien@lakeside.edu,2020,Computer Science"""
+
+dbutils.fs.put("/Volumes/edu_dev/bronze/raw_files/students.csv", csv_content, overwrite=True)
+print("students.csv written to /Volumes/edu_dev/bronze/raw_files/")
+
+--- Cell 28 (markdown) ---
+### Task 4.3 — Read the CSV from the volume into a DataFrame
+
+Read the CSV file you just placed in the volume into a Spark DataFrame and display its contents. The file is at `/Volumes/edu_dev/bronze/raw_files/students.csv`.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I read a CSV file with a header row from a Unity Catalog volume path in PySpark?"*
+
+**Hint:** Use `spark.read.csv(path, header=True, inferSchema=True)` then call `.display()` or `.show()` on the result.
+
+--- Cell 29 (code) ---
+# TODO: Read /Volumes/edu_dev/bronze/raw_files/students.csv into a Spark DataFrame and display it
+
+--- Cell 30 (markdown) ---
+## Exercise 5: Create a Reusable SQL Function
+
+Unity Catalog allows you to create **governed, reusable functions** that encapsulate business logic. Instead of repeating grade conversion logic in every query, you'll write it once as a SQL function and call it from any notebook or query in the workspace.
+
+--- Cell 31 (markdown) ---
+### Task 5.1 — Create a grade classification function
+
+Create a SQL scalar function `edu_dev.silver.get_grade_classification` that accepts a `grade DECIMAL(4,2)` and returns a `STRING` letter classification based on the scale used at Lakeside University:
+
+| Grade range | Classification |
+|-------------|----------------|
+| ≥ 8.5 | `'A'` |
+| ≥ 7.0 | `'B'` |
+| ≥ 5.5 | `'C'` |
+| ≥ 4.0 | `'D'` |
+| < 4.0 | `'F'` |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a SQL scalar function in Unity Catalog that uses a CASE expression to return a letter grade based on a numeric score?"*
+
+**Hint:** Use `CREATE FUNCTION ... RETURNS STRING RETURN CASE WHEN ... END`.
+
+--- Cell 32 (code) ---
+%sql
+-- TODO: Create the edu_dev.silver.get_grade_classification function
+
+--- Cell 33 (markdown) ---
+### Task 5.2 — Test the function
+
+Query `edu_dev.silver.enrollments` and apply your new function to produce a `grade_classification` column for each row. Include: `enrollment_id`, `student_id`, `course_id`, `semester`, `grade`, and `grade_classification`.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I call a Unity Catalog user-defined function in a SELECT statement in Azure Databricks?"*
+
+--- Cell 34 (code) ---
+%sql
+-- TODO: Query edu_dev.silver.enrollments and call get_grade_classification on the grade column
+
+--- Cell 35 (markdown) ---
+## Exercise 6: DDL Operations
+
+Unity Catalog objects evolve over time as requirements change. In this exercise, you use `ALTER` statements to:
+1. Extend the `students` table with a new column.
+2. Apply governance **tags** to the `edu_dev` catalog.
+
+--- Cell 36 (markdown) ---
+### Task 6.1 — Add a column to the students table
+
+The student registration system has been updated to capture phone numbers. Add a nullable `phone_number` column of type `STRING` to `edu_dev.silver.students`.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I add a new nullable column to an existing Delta table in Azure Databricks using SQL?"*
+
+**Hint:** Use `ALTER TABLE`.
+
+--- Cell 37 (code) ---
+%sql
+-- TODO: Add a phone_number (STRING) column to edu_dev.silver.students
+
+--- Cell 38 (markdown) ---
+### Task 6.2 — Apply tags to the catalog
+
+Apply the following tags to the `edu_dev` catalog to support governance and discoverability:
+
+| Tag key | Tag value |
+|---------|----------|
+| `environment` | `'development'` |
+| `university` | `'lakeside'` |
+| `data_classification` | `'internal'` |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I set metadata tags on a Unity Catalog catalog using the ALTER CATALOG statement in Databricks?"*
+
+--- Cell 39 (code) ---
+%sql
+-- TODO: Apply the three tags to the edu_dev catalog using ALTER CATALOG ... SET TAGS
+
+--- Cell 40 (markdown) ---
+### Task 6.3 — Verify your work
+
+Run the following cells to confirm your catalog structure, table schemas, and tags are all in place. Compare the output with what you created throughout this lab.
+
+--- Cell 41 (code) ---
+%sql
+-- Show all tables and views in the silver schema
+SHOW TABLES IN edu_dev.silver;
+
+--- Cell 42 (code) ---
+%sql
+-- Describe the students table — verify the new phone_number column is present
+DESCRIBE TABLE edu_dev.silver.students;
+
+--- Cell 43 (code) ---
+%sql
+-- Show catalog details
+DESCRIBE CATALOG EXTENDED edu_dev;
+
+--- Cell 44 (code) ---
+%sql 
+-- Query tags via information schema (structured way)
+SELECT *
+FROM system.information_schema.catalog_tags
+WHERE catalog_name = 'edu_dev';
+
+--- Cell 45 (markdown) ---
+---
+
+## Next steps
+
+You have completed all notebook exercises. Return to the **lab instructions** and continue with:
+
+- **Exercise**: Configure an AI/BI Genie Space (optional)
+
+================================================================================
+# 04-secure-unity-catalog-objects
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Access Control
+
+You are a data engineer at **NorthMart Retail**, a national supermarket chain. Your team stores customer and transaction data in Unity Catalog. Before any analyst can run queries, you must first create the catalog, the schema, and populate a customer table — then grant the `retail-analysts` group the permissions they need.
+
+> ⚠️ Before starting this exercise, ensure you have created the `retail-analysts` group in Databricks and added your own user account to it. See the lab setup instructions.
+
+--- Cell 2 (markdown) ---
+### Task 1.1 — Create the catalog, schema, and customers table
+
+The cell below sets up all the objects needed for this exercise:
+- Creates a catalog called `retail_catalog` to hold all NorthMart data assets.
+- Creates a schema called `security_lab` inside it.
+- Creates a managed Delta table `retail_catalog.security_lab.customers` and populates it with six sample customer records. These rows will be used throughout the rest of this exercise to demonstrate row filtering and column masking.
+
+| customer_id | customer_name   | email                   | region | total_spend | tier     |
+|-------------|-----------------|-------------------------|--------|-------------|----------|
+| 1           | Alice Johnson   | alice@northmart.com     | North  | 5200.00     | Standard |
+| 2           | Bob Martinez    | bob@northmart.com       | South  | 8100.00     | Premium  |
+| 3           | Carol Lee       | carol@northmart.com     | North  | 3400.00     | Standard |
+| 4           | David Chen      | david@northmart.com     | East   | 7800.00     | Premium  |
+| 5           | Eve Patel       | eve@northmart.com       | West   | 6200.00     | Standard |
+| 6           | Frank Kim       | frank@northmart.com     | South  | 4100.00     | Standard |
+
+Run the cell to provision these objects.
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS retail_catalog
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'Catalog for NorthMart Retail data assets'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS retail_catalog.security_lab
+  COMMENT 'Schema used for the security lab exercises';
+
+CREATE OR REPLACE TABLE retail_catalog.security_lab.customers AS
+SELECT * FROM VALUES
+  (1, 'Alice Johnson', 'alice@northmart.com', 'North', 5200.00, 'Standard'),
+  (2, 'Bob Martinez',  'bob@northmart.com',   'South', 8100.00, 'Premium'),
+  (3, 'Carol Lee',     'carol@northmart.com', 'North', 3400.00, 'Standard'),
+  (4, 'David Chen',    'david@northmart.com', 'East',  7800.00, 'Premium'),
+  (5, 'Eve Patel',     'eve@northmart.com',   'West',  6200.00, 'Standard'),
+  (6, 'Frank Kim',     'frank@northmart.com', 'South', 4100.00, 'Standard')
+  AS t(customer_id, customer_name, email, region, total_spend, tier);
+
+--- Cell 5 (markdown) ---
+### Task 1.2 — Grant permissions to the retail-analysts group
+
+The `retail-analysts` group needs to query the `customers` table. Grant the necessary privileges at all required levels of the Unity Catalog hierarchy:
+
+- `USE CATALOG` on `retail_catalog`
+- `USE SCHEMA` on `retail_catalog.security_lab`
+- `SELECT` on `retail_catalog.security_lab.customers`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"What SQL grants are needed to allow a Databricks group to SELECT from a Unity Catalog table?"*
+
+**Hint:** Use `GRANT <privilege> ON <object type> <object name> TO \`retail-analysts\``.
+
+--- Cell 6 (code) ---
+%sql
+-- TODO: Verify the granted permissions
+
+--- Cell 7 (markdown) ---
+### Task 1.3 — Verify the granted permissions
+
+Verify that the privileges were correctly assigned. Use `SHOW GRANTS` to display all privileges on the `customers` table.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I use SHOW GRANTS to verify permissions on a Unity Catalog table?"*
+
+**Expected result:** You should see `retail-analysts` listed with the `SELECT` privilege.
+
+--- Cell 8 (code) ---
+%sql
+-- TODO: Show all grants on retail_catalog.security_lab.customers
+
+--- Cell 9 (markdown) ---
+## Exercise 2: Row Filtering
+
+NorthMart Retail's regional analysts should only see customer records for their own region. You will implement a **row filter function** that restricts rows based on who is querying the table.
+
+Since you cannot create multiple user accounts, you will write a filter that shows only `North` region rows to everyone *except* for your own user account, which sees all rows. This simulates what a regional analyst would experience.
+
+--- Cell 10 (markdown) ---
+### Task 2.1 — Create a row filter function
+
+Create a SQL function `retail_catalog.security_lab.region_filter` that takes a `region` parameter of type `STRING` and returns `TRUE` if:
+- the `region` is `'North'`, **OR**
+- the current user is your own account (replace `your@email.com` with your actual email).
+
+This means: unless you are the privileged user, only `North` region rows will be visible.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a row filter function in Databricks Unity Catalog that uses current_user() to control access?"*
+
+**Hint:** Use `CREATE OR REPLACE FUNCTION ... RETURN <boolean expression using current_user()>`.
+
+--- Cell 11 (code) ---
+%sql
+-- TODO: Create the region_filter function in retail_catalog.security_lab
+-- Replace 'your@email.com' with your actual Databricks user email
+
+--- Cell 12 (markdown) ---
+### Task 2.2 — Apply the row filter to the customers table
+
+Attach the `region_filter` function to the `customers` table so that it is automatically applied to every query against that table.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I set a row filter on a Unity Catalog table in Azure Databricks?"*
+
+**Hint:** Use `ALTER TABLE ... SET ROW FILTER <function> ON (<column>)`.
+
+--- Cell 13 (code) ---
+%sql
+-- TODO: Apply region_filter to retail_catalog.security_lab.customers on the region column
+
+--- Cell 14 (markdown) ---
+### Task 2.3 — Test the row filter
+
+Query the `customers` table. Because your own email is listed as the privileged user in the filter function, you should see **all 6 rows**.
+
+If you had logged in as someone else (not your email), you would only see the 2 `North` region rows.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How can I verify which user is currently running a query in Databricks using SQL?"*
+
+--- Cell 15 (code) ---
+%sql
+-- Verify the current user
+SELECT current_user();
+
+-- TODO: Query retail_catalog.security_lab.customers and observe the results
+
+--- Cell 16 (markdown) ---
+➡️ Tip: update the email address in the row filter function you created earlier, and test again. Observe the output when querying the customers table.
+
+--- Cell 17 (markdown) ---
+### Task 2.4 — Remove the row filter
+
+Now remove the row filter from the `customers` table. After removing it, query the table again to confirm **all 6 rows** are now returned regardless of user context.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I remove a row filter from a Unity Catalog table?"*
+
+**Hint:** Use `ALTER TABLE ... DROP ROW FILTER`.
+
+--- Cell 18 (code) ---
+%sql
+-- TODO: Remove the row filter from retail_catalog.security_lab.customers
+
+-- TODO: Query the table to confirm all 6 rows are visible
+
+--- Cell 19 (markdown) ---
+## Exercise 3: Column Masking
+
+Customer email addresses are PII and must be masked for users who aren't privileged. You will create a **column mask function** that hides the full email address for most users, applying it to the `email` column of the `customers` table.
+
+--- Cell 20 (markdown) ---
+### Task 3.1 — Create a column mask function
+
+Create a SQL function `retail_catalog.security_lab.mask_email` that takes an `email` parameter of type `STRING` and:
+- Returns the **full email** if the current user is your own account.
+- Returns a **masked value** (e.g. `'***@***.com'`) for all other users.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a column masking function in Databricks Unity Catalog that uses current_user() to decide whether to return the real or masked value?"*
+
+**Hint:** Use a `CASE WHEN current_user() = '...' THEN email ELSE '***@***.com' END` pattern inside the function body.
+
+--- Cell 21 (code) ---
+%sql
+-- TODO: Create the mask_email function in retail_catalog.security_lab
+-- Replace 'your@email.com' with your actual Databricks user email
+
+--- Cell 22 (markdown) ---
+### Task 3.2 — Apply the column mask to the email column
+
+Apply the `mask_email` function as a column mask on the `email` column of the `customers` table.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I set a column mask on a Unity Catalog table column in Azure Databricks using SQL?"*
+
+**Hint:** Use `ALTER TABLE ... ALTER COLUMN email SET MASK <function>`.
+
+--- Cell 23 (code) ---
+%sql
+-- TODO: Apply mask_email to the email column of retail_catalog.security_lab.customers
+
+--- Cell 24 (markdown) ---
+### Task 3.3 — Test the column mask
+
+Query the `customers` table. Since you are the privileged user specified in the mask function, you should see the **real email addresses**.
+
+Any other user querying this table would see `***@***.com` in the `email` column.
+
+--- Cell 25 (code) ---
+%sql
+-- TODO: Query retail_catalog.security_lab.customers and observe the email column
+
+--- Cell 26 (markdown) ---
+### Task 3.4 — Remove the column mask
+
+Remove the column mask from the `email` column, then query the table again to confirm emails are now fully visible to all users.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I drop a column mask from a Unity Catalog table column?"*
+
+**Hint:** Use `ALTER TABLE ... ALTER COLUMN email DROP MASK`.
+
+--- Cell 27 (code) ---
+%sql
+-- TODO: Remove the column mask from the email column
+
+-- TODO: Query the table to confirm email addresses are now unmasked
+
+--- Cell 28 (markdown) ---
+## Exercise 4: Azure Key Vault Secrets
+
+NorthMart Retail's loyalty platform requires an API key to connect. Storing this key in plain text inside a notebook is a security risk. In this exercise you retrieve the API key securely from the Azure Key Vault-backed secret scope you created during lab setup.
+
+> ⚠️ Before running the cells in this exercise, ensure you have completed the Key Vault setup steps in the lab instructions (create Key Vault, add secret `loyalty-api-key`, create secret scope `retail-kv-scope`).
+
+--- Cell 29 (markdown) ---
+### Task 4.1 — List available secrets in the scope
+
+List all secrets available in the `retail-kv-scope` secret scope to confirm that `loyalty-api-key` is accessible.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I list the secrets in a Databricks secret scope using dbutils?"*
+
+**Hint:** Use `dbutils.secrets.list("scope-name")`. This returns key names only — never secret values.
+
+--- Cell 30 (code) ---
+# TODO: List all secrets in the retail-kv-scope and display the output
+
+--- Cell 31 (markdown) ---
+### Task 4.2 — Retrieve the API key securely in Python
+
+Retrieve the `loyalty-api-key` secret from the `retail-kv-scope` scope and assign it to a variable. Then print it.
+
+Observe how Azure Databricks **automatically redacts** the value in the notebook output — you will see `[REDACTED]` instead of the actual key.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I retrieve a secret from a Databricks secret scope using dbutils.secrets.get and why is the output redacted?"*
+
+--- Cell 32 (code) ---
+# TODO: Retrieve the loyalty-api-key from retail-kv-scope
+# TODO: Print the api_key variable and observe that the output is [REDACTED]
+
+--- Cell 33 (markdown) ---
+### Task 4.3 — Use the secret to simulate a connection string
+
+Construct a connection string that embeds the API key, simulating how it would be used to connect to NorthMart's loyalty platform. Print the connection string and observe that the secret value is still redacted.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I safely use a Databricks secret inside an f-string for a connection string without exposing the value?"*
+
+--- Cell 34 (code) ---
+# TODO: Build a connection string using the api_key variable
+# Example format: "https://loyalty.northmart.com/api?key=<api_key>"
+# TODO: Print the connection string
+
+--- Cell 35 (markdown) ---
+### Task 4.4 — Retrieve the secret using SQL
+
+Retrieve the same secret using the `secret()` SQL function. This is useful when constructing SQL-based connections.
+
+Note that the output is also redacted in SQL results.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I use the secret() function in Databricks SQL to retrieve a secret from a scope?"*
+
+--- Cell 36 (code) ---
+%sql
+-- TODO: Use the secret() SQL function to retrieve loyalty-api-key from retail-kv-scope
+
+--- Cell 37 (markdown) ---
+## Cleanup
+
+Run the cell below to remove all objects created during this lab.
+
+--- Cell 38 (code) ---
+%sql
+-- Remove all lab objects
+ALTER TABLE retail_catalog.security_lab.customers DROP ROW FILTER;
+ALTER TABLE retail_catalog.security_lab.customers ALTER COLUMN email DROP MASK;
+DROP TABLE IF EXISTS retail_catalog.security_lab.customers;
+DROP FUNCTION IF EXISTS retail_catalog.security_lab.region_filter;
+DROP FUNCTION IF EXISTS retail_catalog.security_lab.mask_email;
+DROP SCHEMA IF EXISTS retail_catalog.security_lab;
+DROP CATALOG IF EXISTS retail_catalog CASCADE;
+
+================================================================================
+# 05-govern-unity-catalog-objects
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set Up the AutoSphere Data Platform
+
+You are a data engineer at **AutoSphere AG**, a global automotive manufacturer. Your connected vehicle platform ingests telemetry from millions of vehicles, manages customer registration data, and tracks service history.
+
+Before you can apply governance controls, you need to create the catalog, schema, and tables that form the foundation of the platform. You'll also add **comments** to document the purpose of each table and column — making your data assets discoverable by other teams.
+
+--- Cell 2 (markdown) ---
+### Setup — Create the catalog, schema, and tables
+
+To keep the focus on governance controls, the AutoSphere data platform is set up for you in the cell below. It creates:
+
+- **`automotive_catalog`** — the Unity Catalog catalog for the AutoSphere platform, with a descriptive comment
+- **`automotive_catalog.governance_lab`** — the schema used throughout this lab
+- **`customer_registrations`** — one row per registered customer and their associated vehicle; includes a table-level comment
+- **`vehicle_telemetry`** — continuous telemetry events from connected vehicles; includes column-level comments on `speed_kmh` and `battery_level_pct`
+
+Run the cell to prepare your environment, then continue to Exercise 2.
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS automotive_catalog
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'Connected vehicle platform catalog for AutoSphere AG — stores registration, telemetry, and service data.'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS automotive_catalog.governance_lab
+  COMMENT 'Governance lab schema for hands-on Unity Catalog exercises.';
+
+-- Create the customer_registrations table
+CREATE TABLE IF NOT EXISTS automotive_catalog.governance_lab.customer_registrations
+  COMMENT 'One row per registered AutoSphere customer and their associated vehicle.'
+AS SELECT * FROM VALUES
+  (1, 'Lukas Bauer',    'lukas.bauer@autosphere.de',   'DE-LB-4821', 'DE', 'VH-001'),
+  (2, 'Sophie Martin',  'sophie.martin@autosphere.fr',  'FR-SM-9034', 'FR', 'VH-002'),
+  (3, 'James Clarke',   'james.clarke@autosphere.uk',   'UK-JC-1172', 'UK', 'VH-003'),
+  (4, 'Yuki Tanaka',    'yuki.tanaka@autosphere.jp',    'JP-YT-5561', 'JP', 'VH-004'),
+  (5, 'Maria Santos',   'maria.santos@autosphere.pt',   'PT-MS-8843', 'PT', 'VH-005'),
+  (6, 'Carlos Rivera',  'carlos.rivera@autosphere.es',  'ES-CR-3309', 'ES', 'VH-006')
+AS t(customer_id, full_name, email, driver_license_no, country, vehicle_id);
+
+-- Create the vehicle_telemetry table
+CREATE TABLE IF NOT EXISTS automotive_catalog.governance_lab.vehicle_telemetry (
+  event_id          BIGINT    COMMENT 'Unique telemetry event identifier',
+  vehicle_id        STRING,
+  event_time        TIMESTAMP,
+  speed_kmh         INT       COMMENT 'Instantaneous vehicle speed in kilometres per hour',
+  battery_level_pct INT       COMMENT 'State of charge as a percentage (0–100)',
+  latitude          DOUBLE,
+  longitude         DOUBLE,
+  country           STRING
+);
+
+INSERT INTO automotive_catalog.governance_lab.vehicle_telemetry VALUES
+  (1, 'VH-001', TIMESTAMP '2026-03-01 08:15:00', 112, 78,  48.8566,   2.3522, 'DE'),
+  (2, 'VH-002', TIMESTAMP '2026-03-01 08:16:00', 95,  55,  51.5074,  -0.1278, 'FR'),
+  (3, 'VH-003', TIMESTAMP '2026-03-01 08:17:00', 130, 91,  40.4168,  -3.7038, 'UK'),
+  (4, 'VH-004', TIMESTAMP '2026-03-01 08:18:00', 88,  34,  35.6762, 139.6503, 'JP'),
+  (5, 'VH-005', TIMESTAMP '2026-03-01 08:19:00', 105, 62,  38.7223,  -9.1393, 'PT'),
+  (6, 'VH-006', TIMESTAMP '2026-03-01 08:20:00', 77,  47,  41.3851,   2.1734, 'ES');
+
+--- Cell 5 (markdown) ---
+## Exercise 2: Tag Data Assets for Governance
+
+AutoSphere's compliance team requires that all tables and columns containing **personally identifiable information (PII)** are consistently labelled. Tags enable automated discovery and will later drive access policies.
+
+In this exercise, you apply table-level and column-level tags to classify the `customer_registrations` table.
+
+--- Cell 6 (markdown) ---
+### Task 2.1 — Add table-level tags
+
+Tag the `customer_registrations` table to classify it by domain and sensitivity:
+
+- `domain` = `customer`
+- `data_classification` = `confidential`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I add key-value tags to a Unity Catalog table in Databricks SQL?"*
+
+**Hint:** Use `ALTER TABLE ... SET TAGS ('key' = 'value', 'key2' = 'value2')`.
+
+--- Cell 7 (code) ---
+%sql
+-- TODO: Add table-level tags to automotive_catalog.governance_lab.customer_registrations
+-- Tags: domain = customer, data_classification = confidential
+
+--- Cell 8 (markdown) ---
+### Task 2.2 — Add column-level PII tags
+
+Tag the PII columns in `customer_registrations` to identify them as sensitive:
+
+- Column `email` → `pii` = `email`
+- Column `driver_license_no` → `pii` = `driver_license`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I add a tag to a specific column in a Unity Catalog table using SQL in Databricks?"*
+
+**Hint:** Use `ALTER TABLE ... ALTER COLUMN <col> SET TAGS (...)`.
+
+--- Cell 9 (code) ---
+%sql
+-- TODO: Tag the email column with pii = email
+
+-- TODO: Tag the driver_license_no column with pii = driver_license
+
+--- Cell 10 (markdown) ---
+### Task 2.3 — Verify the tags
+
+Use `system.information_schema.table_tags` to confirm the table-level tags have been applied. Then describe the columns to confirm the column tags are present. Use `system.information_schema.column_tags` for this.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How can I verify tags on a Unity Catalog table and its columns in Databricks SQL?"*
+
+--- Cell 11 (code) ---
+%sql
+-- Show table-level tags for customer_registrations
+
+--- Cell 12 (code) ---
+%sql
+-- Show column-level tags for customer_registrations
+
+--- Cell 13 (markdown) ---
+## Exercise 3: Configure Data Retention
+
+AutoSphere's vehicle telemetry table is written to continuously. To comply with GDPR data minimisation principles and control storage costs, the platform must:
+
+- Retain only **14 days** of table history.
+- Permanently remove old data files using `VACUUM`.
+- Enable **predictive optimization** so that future maintenance runs automatically.
+
+In this exercise, you configure retention settings, simulate record deletion, and run a `VACUUM` operation.
+
+--- Cell 14 (markdown) ---
+### Task 3.1 — Configure retention properties
+
+Set the following Delta Lake table properties on `vehicle_telemetry`:
+
+- `delta.logRetentionDuration` = `interval 14 days`
+- `delta.deletedFileRetentionDuration` = `interval 14 days`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I set Delta Lake retention duration properties on a Unity Catalog table in Databricks?"*
+
+**Hint:** Use `ALTER TABLE ... SET TBLPROPERTIES (...)`.
+
+--- Cell 15 (code) ---
+%sql
+-- TODO: Set logRetentionDuration and deletedFileRetentionDuration to 14 days
+-- on automotive_catalog.governance_lab.vehicle_telemetry
+
+--- Cell 16 (markdown) ---
+### Task 3.2 — Simulate a GDPR deletion request
+
+A customer has submitted a right-to-erasure request. Delete all telemetry records for vehicle `VH-003` from the `vehicle_telemetry` table.
+
+After deletion, verify the records are gone by querying the table.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I delete specific rows from a Delta Lake table in Databricks SQL?"*
+
+--- Cell 17 (code) ---
+%sql
+-- TODO: Delete all rows for vehicle_id = 'VH-003' from vehicle_telemetry
+
+-- TODO: Verify the deletion by querying the table
+
+--- Cell 18 (markdown) ---
+### Task 3.3 — Run VACUUM to purge deleted data files
+
+The deleted rows still exist in underlying Parquet files until `VACUUM` is run. Execute `VACUUM` on `vehicle_telemetry` to permanently remove files that are no longer referenced by any current or recent table version.
+
+Use the default retention of **168 hours (7 days)**. This is safe, works on Serverless compute, and is appropriate for a lab environment.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I run VACUUM on a Delta Lake table in Databricks, and what does the RETAIN option do?"*
+
+**Note:** On Serverless compute, overriding the minimum retention duration is not supported. Always specify a `RETAIN` value of at least 168 hours, or omit `RETAIN` entirely to use the default.
+
+--- Cell 19 (code) ---
+%sql
+-- TODO: Run VACUUM on automotive_catalog.governance_lab.vehicle_telemetry
+-- Use RETAIN 168 HOURS (7 days) or omit RETAIN to use the default
+
+--- Cell 20 (markdown) ---
+### Task 3.4 — Enable predictive optimization
+
+Enable **predictive optimization** on the `governance_lab` schema so that future `VACUUM` and `OPTIMIZE` maintenance runs automatically without manual scheduling.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I enable predictive optimization on a Unity Catalog schema in Databricks?"*
+
+**Hint:** Use `ALTER SCHEMA ... ENABLE PREDICTIVE OPTIMIZATION`.
+
+--- Cell 21 (code) ---
+%sql
+-- TODO: Enable predictive optimization on automotive_catalog.governance_lab
+
+--- Cell 22 (markdown) ---
+## Exercise 4: Query Data Lineage Programmatically
+
+> 📋 **Before running this exercise**: If you haven't already done so, pause here and follow the **Catalog Explorer lineage steps** in the lab setup instructions to explore lineage visually in the UI. Then return here to query lineage data using SQL.
+
+Unity Catalog captures all read and write events and stores them in the `system.access.table_lineage` system table. This lets you programmatically answer questions like: *"Which tables in our automotive catalog were most queried this week?"*
+
+--- Cell 23 (markdown) ---
+### Task 4.1 — Find recently accessed tables in your catalog
+
+Query `system.access.table_lineage` to find all **write events** (source tables) within the past 7 days that relate to `automotive_catalog`. Return the table name and the count of distinct events, ordered by the most active tables first.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I query system.access.table_lineage to find recently accessed Unity Catalog tables in Databricks?"*
+
+**Hint:** Filter on `source_table_full_name LIKE 'automotive_catalog%'` and group by table name.
+
+--- Cell 24 (code) ---
+%sql
+-- TODO: Query system.access.table_lineage for tables in automotive_catalog accessed in the last 7 days
+-- Return: source_table_full_name, count of events
+-- Order by most active first
+
+--- Cell 25 (markdown) ---
+### Task 4.2 — View the history of vehicle_telemetry
+
+Use `DESCRIBE HISTORY` to see the full Delta Lake operation history for `vehicle_telemetry`. Identify the version where the deletion occurred (`DELETE` operation).
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I view the full version history of a Delta Lake table in Databricks SQL?"*
+
+--- Cell 26 (code) ---
+%sql
+-- TODO: Describe the history of automotive_catalog.governance_lab.vehicle_telemetry
+
+--- Cell 27 (markdown) ---
+## Exercise 5: Audit Logging
+
+AutoSphere's compliance team needs to prove to regulators that only authorised users accessed customer data during the past 30 days. The team also wants to be alerted whenever permissions are modified on the Unity Catalog metastore.
+
+You will use the `system.access.audit` system table to answer both of these requirements.
+
+--- Cell 28 (markdown) ---
+### Task 5.1 — Find who accessed the customer_registrations table
+
+Query `system.access.audit` to list all users who accessed `automotive_catalog.governance_lab.customer_registrations` in the past 30 days. Include the action name and the time of each access, ordered by most recent first.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I query the Databricks audit log system table to find who accessed a specific Unity Catalog table?"*
+
+**Hint:** Filter on `request_params.full_name_arg` and `action_name IN ('getTable', 'createTable')`. Use `user_identity.email` for the user column.
+
+--- Cell 29 (code) ---
+%sql
+-- TODO: Query system.access.audit for access events on automotive_catalog.governance_lab.customer_registrations
+-- Return: user email, action_name, event_time
+-- Filter to the past 30 days, order by event_time DESC
+
+--- Cell 30 (markdown) ---
+### Task 5.2 — Detect permission changes across your catalog
+
+Query `system.access.audit` to list all **permission change events** (`updatePermissions` action) on securable objects in `automotive_catalog` during the past 30 days. Include who made the change and what object was affected.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I find all permission changes in the Databricks audit log for a specific Unity Catalog catalog?"*
+
+**Hint:** Filter on `service_name = 'unityCatalog'`, `action_name = 'updatePermissions'`, and `request_params.securable_full_name LIKE 'automotive_catalog%'`.
+
+--- Cell 31 (code) ---
+%sql
+-- TODO: Query system.access.audit for permission change events on automotive_catalog objects
+-- Return: event_time, user email, securable_type, securable_full_name, changes
+-- Filter to the past 30 days, order by event_time DESC
+
+--- Cell 32 (markdown) ---
+### Task 5.3 — Summarise audit activity by user
+
+Create a summary query that counts the total number of audit events per user for Unity Catalog actions in the past 7 days. This gives the compliance team a quick overview of who was most active on the platform.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I aggregate the Databricks audit log to count events per user for Unity Catalog activity?"*
+
+--- Cell 33 (code) ---
+%sql
+-- TODO: Count total audit events per user from system.access.audit
+-- Filter to service_name = 'unityCatalog' and the last 7 days
+-- Return: user email, event count
+-- Order by most active user first
+
+================================================================================
+# 06-design-implement-data-modeling-unity-catalog
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Create the Northbank Financial Data Model
+
+In this exercise, you design the foundational Delta tables for Northbank Financial's analytics platform. The model includes a **customer dimension** designed for SCD Type 2 history tracking, and a **transaction fact table** optimised with liquid clustering and Change Data Feed.
+
+After completing this exercise, return to the lab setup page to explore the tables you created in **Catalog Explorer**.
+
+--- Cell 2 (markdown) ---
+### Task 1.1 — Create the catalog and schema
+
+Create a Unity Catalog **catalog** named `banking_lab` with an appropriate comment. Inside it, create a **schema** named `silver`.
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS banking_lab
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'Northbank Financial lakehouse platform for customer analytics and regulatory reporting'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS banking_lab.silver
+  COMMENT 'Cleansed and enriched banking data — customer dimensions and transaction facts';
+
+--- Cell 5 (markdown) ---
+### Task 1.2 — Create the `dim_customer` SCD Type 2 table
+
+Create a managed Delta table `banking_lab.silver.dim_customer`. This table tracks **customer dimension history** using the SCD Type 2 pattern.
+
+The table must include:
+
+| Column | Type | Notes |
+|---|---|---|
+| `customer_sk` | `BIGINT GENERATED ALWAYS AS IDENTITY` | Surrogate key — auto-incrementing, unique per version |
+| `customer_id` | `STRING NOT NULL` | Business/natural key from source system |
+| `full_name` | `STRING` | |
+| `email` | `STRING` | |
+| `city` | `STRING` | City of primary residence |
+| `segment` | `STRING` | Customer segment: Retail, Premium, Business |
+| `account_type` | `STRING` | Account type: Current, Savings, Business |
+| `valid_from` | `TIMESTAMP NOT NULL` | When this version became effective |
+| `valid_to` | `TIMESTAMP NOT NULL` | When this version expired (9999-12-31 for active records) |
+| `is_current` | `BOOLEAN` | True for the active version |
+
+Apply **liquid clustering** on `customer_id` and enable **Change Data Feed**.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a Delta table in Databricks with GENERATED ALWAYS AS IDENTITY, CLUSTER BY, and Change Data Feed enabled in TBLPROPERTIES?"*
+
+**Hints:**
+- Use `CLUSTER BY (customer_id)` to optimise lookup performance
+- Add `TBLPROPERTIES (delta.enableChangeDataFeed = true)` for audit trail support
+- Use `USING DELTA` (this is the recommended format for all tables in Azure Databricks)
+
+--- Cell 6 (code) ---
+%sql
+-- TODO: Create banking_lab.silver.dim_customer as a managed Delta table
+-- Include all SCD Type 2 columns, CLUSTER BY (customer_id), and enable Change Data Feed
+
+--- Cell 7 (markdown) ---
+### Task 1.3 — Create the `fact_transactions` table
+
+Create a managed Delta table `banking_lab.silver.fact_transactions` to store individual banking payments.
+
+| Column | Type | Notes |
+|---|---|---|
+| `transaction_id` | `STRING NOT NULL` | Unique transaction reference |
+| `account_id` | `STRING` | Bank account identifier |
+| `customer_id` | `STRING` | Links to `dim_customer` |
+| `transaction_type` | `STRING` | Credit, Debit, or Transfer |
+| `amount` | `DECIMAL(15,2)` | Transaction amount |
+| `currency` | `STRING DEFAULT 'GBP'` | Currency code |
+| `transaction_date` | `DATE` | Date of the transaction |
+| `description` | `STRING` | Transaction narrative |
+
+Apply **liquid clustering** on `customer_id, transaction_date` to support the expected query patterns (filtering by customer and/or date range). Enable **Change Data Feed** for FCA compliance auditing.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a Delta Lake table in Databricks SQL with liquid clustering and Change Data Feed enabled?"*
+
+**Hints:**
+- Use `CLUSTER BY (customer_id, transaction_date)` — you can specify up to 4 clustering keys
+- Add `TBLPROPERTIES (delta.enableChangeDataFeed = true)`
+- Use `STRING DEFAULT 'GBP'` for the currency column default value
+
+--- Cell 8 (code) ---
+%sql
+-- TODO: Create banking_lab.silver.fact_transactions as a managed Delta table
+-- Apply CLUSTER BY (customer_id, transaction_date) and enable Change Data Feed
+
+--- Cell 9 (markdown) ---
+## Exercise 2: Implement SCD Type 2 for the Customer Dimension
+
+Northbank's regulatory reporting must reflect the **customer profile at the time of each transaction**, not just the current state. In this exercise, you load initial customer records, apply realistic attribute changes, and implement the **two-step MERGE + INSERT pattern** for SCD Type 2. You then query full customer history and perform a point-in-time lookup.
+
+--- Cell 10 (markdown) ---
+### Task 2.1 — Load the initial customer records
+
+The cell below defines the **initial dataset** for 8 Northbank customers as a PySpark DataFrame. Your task is to **write this DataFrame to `banking_lab.silver.dim_customer`** in append mode.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I write a PySpark DataFrame to an existing Delta table in Databricks using saveAsTable in append mode?"*
+
+**Hints:**
+- Use `df.write.mode("append").saveAsTable("banking_lab.silver.dim_customer")`
+- The data and DataFrame setup are already provided — add the write statement after the DataFrame is built
+
+--- Cell 11 (code) ---
+from pyspark.sql.functions import lit, to_timestamp
+
+initial_customers = [
+    ("C-1001", "Emma Hartley",      "emma.hartley@northbank.com",     "London",     "Retail",   "Savings"),
+    ("C-1002", "James Weston",      "james.weston@northbank.com",     "Manchester", "Retail",   "Current"),
+    ("C-1003", "Sophia Chen",       "sophia.chen@northbank.com",      "Edinburgh",  "Premium",  "Savings"),
+    ("C-1004", "Oliver Banks",      "oliver.banks@northbank.com",     "Birmingham", "Retail",   "Current"),
+    ("C-1005", "Aisha Patel",       "aisha.patel@northbank.com",      "London",     "Business", "Business"),
+    ("C-1006", "Liam Murray",       "liam.murray@northbank.com",      "Leeds",      "Retail",   "Savings"),
+    ("C-1007", "Charlotte Wright",  "charlotte.wright@northbank.com", "Bristol",    "Premium",  "Current"),
+    ("C-1008", "Noah Thompson",     "noah.thompson@northbank.com",    "Glasgow",    "Retail",   "Savings"),
+]
+
+df_initial = spark.createDataFrame(
+    initial_customers,
+    ["customer_id", "full_name", "email", "city", "segment", "account_type"]
+)
+
+df_initial = (
+    df_initial
+    .withColumn("valid_from",  to_timestamp(lit("2020-01-01 00:00:00")))
+    .withColumn("valid_to",    to_timestamp(lit("9999-12-31 00:00:00")))
+    .withColumn("is_current",  lit(True))
+)
+
+# TODO: Write df_initial to banking_lab.silver.dim_customer (append mode)
+
+--- Cell 12 (code) ---
+%sql
+-- Verify: you should see 8 customer records
+SELECT customer_sk, customer_id, full_name, city, segment, is_current
+FROM banking_lab.silver.dim_customer
+ORDER BY customer_sk;
+
+--- Cell 13 (markdown) ---
+### Task 2.2 — Load staging data with customer changes
+
+The operations team has received the following change notifications:
+
+| Customer | Change |
+|---|---|
+| **C-1001 Emma Hartley** | Moved from **London → Oxford**, upgraded to **Premium** segment |
+| **C-1003 Sophia Chen** | Relocated from **Edinburgh → London** |
+| **C-1006 Liam Murray** | Updated email address only (city and segment unchanged) |
+| **C-1009 Priya Singh** | **New customer** joining from Cardiff, Retail segment |
+
+Run the cell below to create a staging DataFrame and register it as a temp view. You will use it in the next task.
+
+--- Cell 14 (code) ---
+staging_data = [
+    ("C-1001", "Emma Hartley",    "emma.hartley@northbank.com",     "Oxford",   "Premium",  "Savings"),
+    ("C-1003", "Sophia Chen",     "sophia.chen@northbank.com",      "London",   "Premium",  "Savings"),
+    ("C-1006", "Liam Murray",     "liam.new@northbank.com",         "Leeds",    "Retail",   "Savings"),
+    ("C-1009", "Priya Singh",     "priya.singh@northbank.com",      "Cardiff",  "Retail",   "Current"),
+]
+
+df_staging = spark.createDataFrame(
+    staging_data,
+    ["customer_id", "full_name", "email", "city", "segment", "account_type"]
+)
+df_staging.createOrReplaceTempView("staging_customers")
+print("Staging data loaded. Temp view 'staging_customers' is available.")
+display(df_staging)
+
+--- Cell 15 (markdown) ---
+### Task 2.3 — Apply SCD Type 2: Step 1 — Close changed records
+
+Write a `MERGE INTO` statement that compares `staging_customers` against the current versions in `dim_customer`. For any record where `city`, `segment`, `email`, or `account_type` has changed, **close the current version** by setting:
+- `valid_to = current_timestamp()`
+- `is_current = false`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"Write a Databricks SQL MERGE statement that closes SCD Type 2 dimension records by setting is_current=false and valid_to=current_timestamp() when any tracked attribute changes."*
+
+**Hints:**
+- Match on `target.customer_id = source.customer_id AND target.is_current = true`
+- The `WHEN MATCHED AND (...)` condition should check if **any** of the tracked attributes differ
+- Only update `valid_to` and `is_current` — do not overwrite the historical data columns
+
+--- Cell 16 (code) ---
+%sql
+-- Step 1: Close the current version of changed customer records
+-- MERGE INTO banking_lab.silver.dim_customer ...
+-- TODO: Write the MERGE statement
+
+--- Cell 17 (markdown) ---
+### Task 2.3 — Apply SCD Type 2: Step 2 — Insert new versions and new customers
+
+Write an `INSERT INTO` statement to:
+1. Add **new current rows** for customers whose old versions were just closed (C-1001, C-1003, C-1006)
+2. Add the **brand-new customer** C-1009 who has no existing record
+
+New rows should have `valid_from = current_timestamp()`, `valid_to = TIMESTAMP '9999-12-31'`, and `is_current = true`.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"Write a Databricks SQL INSERT statement to add new current SCD Type 2 rows from a staging table, only for customers where no is_current=true record exists."*
+
+**Hint:** Use a `WHERE NOT EXISTS (SELECT 1 FROM banking_lab.silver.dim_customer d WHERE d.customer_id = s.customer_id AND d.is_current = true)` to identify which staging records need a new row inserted.
+
+--- Cell 18 (code) ---
+%sql
+-- Step 2: Insert new current versions for changed customers and the new customer
+-- INSERT INTO banking_lab.silver.dim_customer ...
+-- TODO: Write the INSERT statement
+
+--- Cell 19 (markdown) ---
+### Task 2.4 — Query the full version history of a customer
+
+Write a query to show **all versions** of customer `C-1001` (Emma Hartley), ordered by `valid_from`. You should see:
+- Version 1: London / Retail (expired)
+- Version 2: Oxford / Premium (current)
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I query all SCD Type 2 versions for a specific customer in a Databricks Delta table?"*
+
+**Hint:** Filter on `customer_id = 'C-1001'` and `ORDER BY valid_from ASC`.
+
+--- Cell 20 (code) ---
+%sql
+-- TODO: Show all versions of customer C-1001, ordered by valid_from
+
+--- Cell 21 (markdown) ---
+### Task 2.5 — Point-in-time customer lookup
+
+Northbank's regulatory reporting team needs to know the **customer profile as it existed on 2020-06-15** — before any of the changes above were applied.
+
+Write a query that returns one row per customer showing their profile on that date. Use the `valid_from` and `valid_to` columns to select the version that was active on 2020-06-15.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I write a point-in-time query on an SCD Type 2 table using valid_from and valid_to date range filtering?"*
+
+**Hint:** A version was active on date `D` when `valid_from <= D AND valid_to > D`. Expected result: all 8 original customers in their initial state (no Oxford, no London for Sophia).
+
+--- Cell 22 (code) ---
+%sql
+-- TODO: Return the customer profile as it existed on 2020-06-15
+-- Expected: 8 rows showing the original city and segment values
+
+--- Cell 23 (markdown) ---
+## Exercise 3: Change Data Feed & FCA Audit Trail
+
+Basel III and FCA regulations require Northbank to maintain a **queryable audit trail** of all modifications to transaction data. In this exercise, you load payment transactions, simulate data corrections (a common real-world event), and then query the **Change Data Feed** to produce a full audit log.
+
+--- Cell 24 (markdown) ---
+### Task 3.1 — Load initial transactions
+
+Run the cell below to insert 10 payment transactions into `fact_transactions`. These represent one day's batch of processed payments.
+
+--- Cell 25 (code) ---
+%sql
+INSERT INTO banking_lab.silver.fact_transactions VALUES
+  ('TXN-001', 'ACC-001', 'C-1001', 'Credit',  1500.00, 'GBP', '2025-11-01', 'Salary payment'),
+  ('TXN-002', 'ACC-001', 'C-1001', 'Debit',    120.50, 'GBP', '2025-11-03', 'Amazon purchase'),
+  ('TXN-003', 'ACC-002', 'C-1002', 'Debit',    250.00, 'GBP', '2025-11-05', 'Grocery store'),
+  ('TXN-004', 'ACC-003', 'C-1003', 'Credit',  3200.00, 'GBP', '2025-11-07', 'Salary payment'),
+  ('TXN-005', 'ACC-003', 'C-1003', 'Transfer', 500.00, 'GBP', '2025-11-10', 'Rent transfer'),
+  ('TXN-006', 'ACC-004', 'C-1004', 'Debit',     89.99, 'GBP', '2025-11-12', 'Utility bill'),
+  ('TXN-007', 'ACC-005', 'C-1005', 'Debit',   1500.00, 'GBP', '2025-11-14', 'Business expense'),
+  ('TXN-008', 'ACC-006', 'C-1006', 'Credit',  2800.00, 'GBP', '2025-11-15', 'Salary payment'),
+  ('TXN-009', 'ACC-007', 'C-1007', 'Debit',    340.00, 'GBP', '2025-11-18', 'Car insurance'),
+  ('TXN-010', 'ACC-008', 'C-1008', 'Transfer', 200.00, 'GBP', '2025-11-20', 'Transfer to savings');
+
+--- Cell 26 (markdown) ---
+### Task 3.2 — Simulate transaction corrections
+
+Northbank's reconciliation team identified two amount discrepancies. Run the cell below to apply the corrections.
+
+--- Cell 27 (code) ---
+%sql
+-- Correction 1: TXN-003 amount was mis-keyed (correct: £275.50, not £250.00)
+UPDATE banking_lab.silver.fact_transactions
+SET amount = 275.50, description = 'Grocery store (corrected)'
+WHERE transaction_id = 'TXN-003';
+
+-- Correction 2: TXN-007 amount is under dispute
+UPDATE banking_lab.silver.fact_transactions
+SET amount = 1450.00, description = 'Business expense (disputed amount)'
+WHERE transaction_id = 'TXN-007';
+
+--- Cell 28 (markdown) ---
+### Task 3.3 — Query the Change Data Feed to build an audit trail
+
+Write a query using `table_changes()` to retrieve **all change events** recorded for `fact_transactions` since the beginning of its history. Include the `_change_type`, `_commit_version`, and `_commit_timestamp` metadata columns.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I query the Change Data Feed on a Delta table in Databricks using table_changes()? Show change type and commit metadata columns."*
+
+**Hint:** Use `table_changes('banking_lab.silver.fact_transactions', 0)` — the second argument is the starting version number.
+
+--- Cell 29 (code) ---
+%sql
+-- TODO: Query all changes to fact_transactions from version 0 onwards
+-- Include: transaction_id, amount, description, _change_type, _commit_version, _commit_timestamp
+-- ORDER BY _commit_timestamp, transaction_id
+
+--- Cell 30 (markdown) ---
+### Task 3.4 — Isolate corrected records for FCA reporting
+
+For FCA reporting, the compliance team needs a view showing only the **post-correction state** of modified transactions. Filter the Change Data Feed to show only `update_postimage` records.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I filter table_changes() results in Databricks to show only update_postimage records?"*
+
+**Hint:** Each `UPDATE` operation generates two rows: `update_preimage` (before) and `update_postimage` (after the change). Filter for `_change_type = 'update_postimage'`. Expected result: TXN-003 with £275.50 and TXN-007 with £1450.00.
+
+--- Cell 31 (code) ---
+%sql
+-- TODO: Show only the post-correction state of updated transactions
+-- Filter table_changes() results for _change_type = 'update_postimage'
+
+--- Cell 32 (markdown) ---
+## Exercise 4: Delta Lake Time Travel
+
+Delta Lake maintains a full **transaction log** of every change made to a table. This gives you the ability to query **previous versions** of your data and even **restore** a table to an earlier state — without restoring from backup. This is critical for Northbank when transaction data is accidentally modified.
+
+--- Cell 33 (markdown) ---
+### Task 4.1 — Inspect the transaction history
+
+Use `DESCRIBE HISTORY` to view the complete operation log of `fact_transactions`. The output shows every version of the table, including the operation type, timestamp, and user.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I view the full operation history of a Delta table in Databricks, including all version numbers?"*
+
+Note the **version numbers** in the output — you will use them in the next tasks.
+
+--- Cell 34 (code) ---
+%sql
+-- TODO: Show the full operation history of banking_lab.silver.fact_transactions
+
+--- Cell 35 (markdown) ---
+### Task 4.2 — Query original transaction amounts before corrections
+
+Using `VERSION AS OF`, retrieve `TXN-003` and `TXN-007` **as they appeared after the initial INSERT but before the corrections** were applied.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I query a previous version of a Delta table in Databricks using VERSION AS OF in a SELECT statement?"*
+
+**Hint:** The initial INSERT corresponds to version **1** (version 0 is the table creation). Expected result: TXN-003 with £250.00 and TXN-007 with £1500.00.
+
+--- Cell 36 (code) ---
+%sql
+-- TODO: Query fact_transactions VERSION AS OF 1
+-- Show transaction_id, amount, description for TXN-003 and TXN-007
+
+--- Cell 37 (markdown) ---
+### Task 4.3 — Restore the table to its pre-correction state
+
+The reconciliation team has confirmed the corrections were applied in error and must be rolled back. Use `RESTORE TABLE` to revert `fact_transactions` to **version 1** (after the initial load, before any corrections).
+
+After restoring, verify that TXN-003 and TXN-007 show their original amounts.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I use RESTORE TABLE in Databricks to roll back a Delta table to a specific version number?"*
+
+**Hint:** Use `RESTORE TABLE banking_lab.silver.fact_transactions TO VERSION AS OF 1;`
+
+--- Cell 38 (code) ---
+%sql
+-- TODO: Restore fact_transactions to VERSION AS OF 1
+
+--- Cell 39 (code) ---
+%sql
+-- TODO: Verify the original amounts are restored for TXN-003 and TXN-007
+-- Expected: TXN-003 = £250.00, TXN-007 = £1500.00
+
+================================================================================
+# 07-ingest-data-into-unity-catalog
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set up the Solaris Energy Data Platform
+
+Before you can ingest any data, you need to establish the Unity Catalog structure: a **catalog** to represent the platform, **schemas** to organise data by processing layer, and a **volume** to store raw files.
+
+After completing this exercise, return to the lab setup page to verify the objects you created in **Catalog Explorer**.
+
+--- Cell 2 (markdown) ---
+### Task 1: Set up the Unity Catalog structure
+
+Since you've already practiced creating catalogs, schemas, and volumes in a previous lab, this setup code is provided for you — simply run the cell below to prepare your environment.
+
+The code creates the following Unity Catalog objects:
+- A **catalog** named `solaris_lab` — the top-level namespace for the Solaris Energy platform
+- A **bronze schema** inside `solaris_lab` — for raw ingested data, exactly as it arrives from source systems
+- A **silver schema** inside `solaris_lab` — for cleansed and enriched data
+- A **managed volume** named `raw_files` inside `solaris_lab.bronze` — the landing zone for incoming CSV files from field sensors and SCADA systems
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS solaris_lab
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'Solaris Energy analytics platform — solar farms and wind turbines across Europe'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS solaris_lab.bronze
+  COMMENT 'Raw ingested data — unmodified, as received from field systems';
+
+CREATE SCHEMA IF NOT EXISTS solaris_lab.silver
+  COMMENT 'Cleansed and enriched data — ready for analytics and reporting';
+  
+CREATE VOLUME IF NOT EXISTS solaris_lab.bronze.raw_files
+  COMMENT 'Landing zone for raw CSV files from SCADA systems and field sensors';
+
+--- Cell 5 (markdown) ---
+### ✅ Provided: Populate the volume with sample data
+
+Run the cell below to write two sample CSV files into your volume:
+- `solar_readings.csv` — energy output readings from solar panels at sites in Spain and Germany
+- `turbine_events.csv` — maintenance and alert events from wind turbines in the Netherlands and Denmark
+
+You will use these files in Exercises 2, 3, and 4.
+
+--- Cell 6 (code) ---
+# ✅ Run this cell — it writes sample data files to your volume
+
+solar_csv = """reading_id,site_id,panel_id,reading_timestamp,power_kw,irradiance_w_m2,temperature_c,status
+R001,SITE_ES_001,P-ES-001,2025-06-01 06:30:00,8.2,210,18.4,Normal
+R002,SITE_ES_001,P-ES-002,2025-06-01 06:30:00,7.9,205,18.6,Normal
+R003,SITE_ES_001,P-ES-003,2025-06-01 06:30:00,8.5,215,18.2,Normal
+R004,SITE_ES_001,P-ES-004,2025-06-01 06:30:00,0.0,205,18.5,Fault
+R005,SITE_ES_001,P-ES-005,2025-06-01 06:30:00,7.6,200,18.8,Normal
+R006,SITE_ES_001,P-ES-001,2025-06-01 09:00:00,142.3,750,28.1,Normal
+R007,SITE_ES_001,P-ES-002,2025-06-01 09:00:00,138.7,745,28.4,Normal
+R008,SITE_ES_001,P-ES-003,2025-06-01 09:00:00,145.1,755,27.9,Normal
+R009,SITE_ES_001,P-ES-004,2025-06-01 09:00:00,0.0,750,28.2,Fault
+R010,SITE_ES_001,P-ES-005,2025-06-01 09:00:00,136.4,740,28.7,Normal
+R011,SITE_ES_001,P-ES-001,2025-06-01 12:00:00,228.5,1150,41.3,Normal
+R012,SITE_ES_001,P-ES-002,2025-06-01 12:00:00,221.4,1140,41.8,Warning
+R013,SITE_ES_001,P-ES-003,2025-06-01 12:00:00,235.8,1160,40.9,Normal
+R014,SITE_ES_001,P-ES-004,2025-06-01 12:00:00,0.0,1150,41.5,Fault
+R015,SITE_ES_001,P-ES-005,2025-06-01 12:00:00,219.6,1135,42.1,Warning
+R016,SITE_DE_001,P-DE-001,2025-06-01 06:30:00,4.1,120,12.3,Normal
+R017,SITE_DE_001,P-DE-002,2025-06-01 06:30:00,4.3,125,12.1,Normal
+R018,SITE_DE_001,P-DE-003,2025-06-01 06:30:00,3.8,118,12.5,Normal
+R019,SITE_DE_001,P-DE-004,2025-06-01 06:30:00,4.0,122,12.4,Normal
+R020,SITE_DE_001,P-DE-005,2025-06-01 06:30:00,4.2,124,12.2,Normal
+R021,SITE_DE_001,P-DE-001,2025-06-01 09:00:00,98.7,540,19.8,Normal
+R022,SITE_DE_001,P-DE-002,2025-06-01 09:00:00,101.2,548,19.6,Normal
+R023,SITE_DE_001,P-DE-003,2025-06-01 09:00:00,96.4,535,20.1,Normal
+R024,SITE_DE_001,P-DE-004,2025-06-01 09:00:00,99.8,542,19.9,Normal
+R025,SITE_DE_001,P-DE-005,2025-06-01 09:00:00,102.1,550,19.4,Normal
+R026,SITE_DE_001,P-DE-001,2025-06-01 12:00:00,187.3,980,31.2,Normal
+R027,SITE_DE_001,P-DE-002,2025-06-01 12:00:00,191.6,992,30.8,Normal
+R028,SITE_DE_001,P-DE-003,2025-06-01 12:00:00,184.9,975,31.5,Normal
+R029,SITE_DE_001,P-DE-004,2025-06-01 12:00:00,188.7,984,31.0,Normal
+R030,SITE_DE_001,P-DE-005,2025-06-01 12:00:00,193.2,996,30.6,Normal
+R031,SITE_ES_001,P-ES-001,2025-06-02 12:00:00,232.1,1165,42.7,Normal
+R032,SITE_ES_001,P-ES-002,2025-06-02 12:00:00,226.9,1155,43.1,Normal
+R033,SITE_ES_001,P-ES-003,2025-06-02 12:00:00,239.4,1175,42.3,Normal
+R034,SITE_ES_001,P-ES-004,2025-06-02 12:00:00,225.2,1148,43.4,Normal
+R035,SITE_ES_001,P-ES-005,2025-06-02 12:00:00,231.7,1162,42.9,Normal
+"""
+
+turbine_csv = """event_id,turbine_id,site_id,event_timestamp,event_type,severity,description,resolved
+EVT001,T-NL-001,WIND_NL_001,2025-06-01 02:14:00,Alert,Medium,Vibration level 18% above baseline threshold,true
+EVT002,T-NL-002,WIND_NL_001,2025-06-01 03:47:00,Fault,High,Gearbox oil temperature exceeded 85 degrees C,true
+EVT003,T-NL-003,WIND_NL_001,2025-06-01 07:30:00,Inspection,Low,Scheduled 6-month rotor blade inspection,true
+EVT004,T-NL-004,WIND_NL_001,2025-06-01 09:12:00,Alert,Low,Wind speed sensor calibration drift detected,false
+EVT005,T-NL-005,WIND_NL_001,2025-06-01 11:55:00,Maintenance,Medium,Yaw motor lubrication service,true
+EVT006,T-DK-001,WIND_DK_001,2025-06-01 01:05:00,Alert,Critical,Blade pitch control failure - emergency stop activated,true
+EVT007,T-DK-002,WIND_DK_001,2025-06-01 04:22:00,Fault,Medium,Power converter overload - output capped at 60%,false
+EVT008,T-DK-003,WIND_DK_001,2025-06-01 06:45:00,Inspection,Low,Annual safety and compliance inspection,true
+EVT009,T-DK-004,WIND_DK_001,2025-06-01 10:33:00,Maintenance,Low,Tower bolt torque check completed,true
+EVT010,T-DK-005,WIND_DK_001,2025-06-01 14:18:00,Alert,Medium,Ice accretion on blades - de-icing initiated,true
+EVT011,T-NL-001,WIND_NL_001,2025-06-02 05:30:00,Maintenance,Low,Hydraulic fluid top-up completed,true
+EVT012,T-NL-002,WIND_NL_001,2025-06-02 08:00:00,Alert,High,Generator winding temperature 12 degrees C above limit,false
+EVT013,T-NL-003,WIND_NL_001,2025-06-02 09:45:00,Fault,Medium,Anemometer replaced after sensor malfunction,true
+EVT014,T-NL-004,WIND_NL_001,2025-06-02 12:10:00,Inspection,Low,Control system firmware update applied,true
+EVT015,T-NL-005,WIND_NL_001,2025-06-02 15:22:00,Alert,Low,Brake pad wear indicator triggered,false
+EVT016,T-DK-001,WIND_DK_001,2025-06-02 03:18:00,Maintenance,Medium,Main bearing grease replenishment,true
+EVT017,T-DK-002,WIND_DK_001,2025-06-02 07:55:00,Alert,High,Pitch battery backup low - replacement scheduled,false
+EVT018,T-DK-003,WIND_DK_001,2025-06-02 10:40:00,Fault,Critical,Transformer fault - turbine offline for 4 hours,true
+EVT019,T-DK-004,WIND_DK_001,2025-06-02 13:15:00,Inspection,Low,Cooling system filters cleaned,true
+EVT020,T-DK-005,WIND_DK_001,2025-06-02 16:50:00,Maintenance,Medium,Slip ring inspection and cleaning completed,true
+"""
+
+with open("/Volumes/solaris_lab/bronze/raw_files/solar_readings.csv", "w") as f:
+    f.write(solar_csv.strip())
+
+with open("/Volumes/solaris_lab/bronze/raw_files/turbine_events.csv", "w") as f:
+    f.write(turbine_csv.strip())
+
+print("✅ Sample data written to /Volumes/solaris_lab/bronze/raw_files/")
+
+--- Cell 7 (markdown) ---
+## Exercise 2: Batch Ingestion with PySpark DataFrames
+
+The SCADA system at Solaris Energy exports daily solar panel readings as CSV files. Your first ingestion task is to read the latest file from the volume, inspect its contents, and write it as a managed Delta table in the `bronze` layer.
+
+After completing this exercise, return to the lab setup page to inspect the table in **Catalog Explorer**.
+
+--- Cell 8 (markdown) ---
+### Task 2.1 — Read the solar readings CSV into a DataFrame
+
+Use the `spark.read` API to load `solar_readings.csv` from the volume. The file has a header row and you should let Spark infer the column data types automatically.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I read a CSV file from a Unity Catalog volume into a PySpark DataFrame with header and schema inference enabled?"*
+
+**Hints:**
+- The volume path is `/Volumes/solaris_lab/bronze/raw_files/solar_readings.csv`
+- Use `.format("csv")`, `.option("header", "true")`, `.option("inferSchema", "true")`, and `.load(...)`
+
+--- Cell 9 (code) ---
+# TODO: Read solar_readings.csv from the volume into a DataFrame named df_solar
+
+df_solar = ...
+
+--- Cell 10 (markdown) ---
+### Task 2.2 — Inspect the schema and sample rows
+
+Before writing data to a table, it is good practice to verify the inferred schema and check a sample of records. Confirm that `power_kw`, `irradiance_w_m2`, and `temperature_c` are numeric types.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I print the schema of a PySpark DataFrame and display the first few rows?"*
+
+**Hints:**
+- Use `df_solar.printSchema()` to view column names and data types
+- Use `display(df_solar)` to preview the data
+
+--- Cell 11 (code) ---
+# TODO: Print the schema of df_solar
+
+
+# TODO: Display a sample of the data
+
+--- Cell 12 (markdown) ---
+### Task 2.3 — Write the DataFrame to a Delta table
+
+Persist the solar readings as a managed Delta table at `solaris_lab.bronze.solar_readings`. Azure Databricks uses Delta Lake format by default, which provides ACID transactions and time travel.
+
+Use `overwrite` mode so the table is fully replaced each time the cell runs (appropriate for an initial full load).
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I write a PySpark DataFrame to a Unity Catalog Delta table using saveAsTable in overwrite mode?"*
+
+**Hints:**
+- Use `df_solar.write.mode("overwrite").saveAsTable("solaris_lab.bronze.solar_readings")`
+
+--- Cell 13 (code) ---
+# TODO: Write df_solar to solaris_lab.bronze.solar_readings in overwrite mode
+
+--- Cell 14 (markdown) ---
+### Task 2.4 — Verify the ingested table
+
+Query the Delta table you just created to confirm all rows were loaded. Also filter for rows where `status = 'Fault'` to check that fault readings from panel `P-ES-004` are present.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I count rows in a Databricks SQL table and filter by a column value?"*
+
+**Hints:**
+- Use `SELECT COUNT(*) FROM solaris_lab.bronze.solar_readings`
+- Add a `WHERE status = 'Fault'` clause to filter faults
+
+--- Cell 15 (code) ---
+%sql
+-- TODO: Count all rows in solaris_lab.bronze.solar_readings
+
+
+-- TODO: Count only rows where status = 'Fault'
+
+--- Cell 16 (markdown) ---
+## Exercise 3: SQL-Based Ingestion
+
+The operations team delivers wind turbine event logs as CSV files that accumulate in the volume over time. Rather than reloading the entire file each run, you will use `COPY INTO` for idempotent, incremental loading. You will then build a silver-layer summary table using `CREATE TABLE AS SELECT`.
+
+--- Cell 17 (markdown) ---
+### Task 3.1 — Create the turbine events target table
+
+`COPY INTO` requires the destination table to exist before you run it. Create a Delta table `solaris_lab.bronze.turbine_events` with the following columns:
+
+| Column | Type |
+|---|---|
+| `event_id` | `STRING` |
+| `turbine_id` | `STRING` |
+| `site_id` | `STRING` |
+| `event_timestamp` | `TIMESTAMP` |
+| `event_type` | `STRING` |
+| `severity` | `STRING` |
+| `description` | `STRING` |
+| `resolved` | `BOOLEAN` |
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I create a Delta table in Databricks SQL with explicit column types, using CREATE TABLE IF NOT EXISTS?"*
+
+**Hints:**
+- Use `CREATE TABLE IF NOT EXISTS solaris_lab.bronze.turbine_events (...)`
+- Use `USING DELTA` (the recommended storage format in Azure Databricks)
+
+--- Cell 18 (code) ---
+%sql
+-- TODO: Create the Delta table solaris_lab.bronze.turbine_events
+-- Include all 8 columns listed above with correct data types
+
+--- Cell 19 (markdown) ---
+### Task 3.2 — Load turbine events with COPY INTO
+
+Use `COPY INTO` to load `turbine_events.csv` from the volume. `COPY INTO` is idempotent — it tracks which files have already been loaded, so re-running the command will not create duplicate rows.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I use COPY INTO in Databricks SQL to load a CSV file from a Unity Catalog volume, including FORMAT_OPTIONS for header and type inference?"*
+
+**Hints:**
+- Point the `FROM` clause to `/Volumes/solaris_lab/bronze/raw_files/turbine_events.csv`
+- Set `FILEFORMAT = CSV`
+- Use `FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'true')`
+
+--- Cell 20 (code) ---
+%sql
+-- TODO: Use COPY INTO to load turbine_events.csv into solaris_lab.bronze.turbine_events
+
+--- Cell 21 (markdown) ---
+### Task 3.3 — Verify idempotency
+
+Count the rows in `turbine_events` now, then run `COPY INTO` again, and count the rows a second time. You should see the same count both times — demonstrating that `COPY INTO` skips already-loaded files.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How does COPY INTO track which files have already been loaded in Databricks?"*
+
+**Hints:**
+- Use `SELECT COUNT(*) FROM solaris_lab.bronze.turbine_events` before and after re-running `COPY INTO`
+- Both counts should return the same number
+
+--- Cell 22 (code) ---
+%sql
+-- TODO: Count rows in turbine_events (first check)
+
+--- Cell 23 (code) ---
+%sql
+-- TODO: Run COPY INTO again (same command as Task 3.2)
+
+--- Cell 24 (code) ---
+%sql
+-- TODO: Count rows again — confirm the count is unchanged
+
+--- Cell 25 (markdown) ---
+### Task 3.4 — Build a silver summary table with CTAS
+
+The energy analytics team needs a daily production summary to track output from each site. Use `CREATE TABLE AS SELECT` (`CTAS`) to create `solaris_lab.silver.daily_solar_production` by aggregating from the bronze `solar_readings` table.
+
+The summary should include:
+- `reading_date` — the date portion of `reading_timestamp`
+- `site_id`
+- `total_power_kw` — sum of `power_kw` for Normal-status readings only
+- `avg_irradiance` — average `irradiance_w_m2`
+- `fault_count` — count of readings where `status = 'Fault'`
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I use CREATE TABLE AS SELECT in Databricks SQL to aggregate data from an existing table, grouping by date and site?"*
+
+**Hints:**
+- Use `CREATE OR REPLACE TABLE solaris_lab.silver.daily_solar_production AS SELECT ...`
+- Use `CAST(reading_timestamp AS DATE)` or `DATE(reading_timestamp)` to extract the date
+- Use `SUM(CASE WHEN status = 'Normal' THEN power_kw ELSE 0 END)` for conditional aggregation
+- Group by `reading_date` and `site_id`
+
+--- Cell 26 (code) ---
+%sql
+-- TODO: Create or replace solaris_lab.silver.daily_solar_production
+-- Aggregate from solaris_lab.bronze.solar_readings
+-- Include: reading_date, site_id, total_power_kw, avg_irradiance, fault_count
+
+--- Cell 27 (code) ---
+%sql
+-- TODO: Query the summary table to verify the results
+-- Order by reading_date and site_id
+
+--- Cell 28 (markdown) ---
+## Exercise 4: Continuous File Ingestion with Auto Loader
+
+New solar readings arrive every 15 minutes from the SCADA system and land as individual CSV files in a cloud storage directory. Rather than scheduling batch jobs to scan for new files, you will use **Auto Loader** to automatically detect and ingest them — processing each file exactly once.
+
+Auto Loader uses the `cloudFiles` source format with `spark.readStream`. The `trigger(availableNow=True)` option processes all currently available files and then stops, which is ideal for scheduled or on-demand ingestion.
+
+--- Cell 29 (markdown) ---
+### ✅ Provided: Simulate incoming data files
+
+Run the cell below. It creates three separate CSV files in an `incoming/` sub-directory of your volume, simulating three consecutive SCADA export waves. Auto Loader will detect and process all of them.
+
+--- Cell 30 (code) ---
+# ✅ Run this cell — it writes three incoming data files
+
+import os
+
+incoming_dir = "/Volumes/solaris_lab/bronze/raw_files/incoming"
+os.makedirs(incoming_dir, exist_ok=True)
+
+wave1 = """reading_id,site_id,panel_id,reading_timestamp,power_kw,irradiance_w_m2,temperature_c,status
+R036,SITE_DE_001,P-DE-001,2025-06-03 09:00:00,103.4,558,20.3,Normal
+R037,SITE_DE_001,P-DE-002,2025-06-03 09:00:00,99.7,545,20.6,Normal
+R038,SITE_DE_001,P-DE-003,2025-06-03 09:00:00,105.1,562,20.1,Normal
+R039,SITE_DE_001,P-DE-004,2025-06-03 09:00:00,101.3,552,20.4,Warning
+R040,SITE_DE_001,P-DE-005,2025-06-03 09:00:00,97.8,540,20.8,Normal"""
+
+wave2 = """reading_id,site_id,panel_id,reading_timestamp,power_kw,irradiance_w_m2,temperature_c,status
+R041,SITE_ES_001,P-ES-001,2025-06-03 09:15:00,148.2,765,29.4,Normal
+R042,SITE_ES_001,P-ES-002,2025-06-03 09:15:00,143.5,755,29.8,Normal
+R043,SITE_ES_001,P-ES-003,2025-06-03 09:15:00,151.9,778,29.1,Normal
+R044,SITE_ES_001,P-ES-004,2025-06-03 09:15:00,146.7,761,29.5,Normal
+R045,SITE_ES_001,P-ES-005,2025-06-03 09:15:00,140.3,748,30.1,Normal"""
+
+wave3 = """reading_id,site_id,panel_id,reading_timestamp,power_kw,irradiance_w_m2,temperature_c,status
+R046,SITE_DE_001,P-DE-001,2025-06-03 09:30:00,108.6,570,20.9,Normal
+R047,SITE_DE_001,P-DE-002,2025-06-03 09:30:00,104.9,562,21.2,Normal
+R048,SITE_DE_001,P-DE-003,2025-06-03 09:30:00,110.3,575,20.7,Normal
+R049,SITE_DE_001,P-DE-004,2025-06-03 09:30:00,0.0,565,21.0,Fault
+R050,SITE_DE_001,P-DE-005,2025-06-03 09:30:00,102.7,558,21.4,Normal"""
+
+for name, content in [("wave_1.csv", wave1), ("wave_2.csv", wave2), ("wave_3.csv", wave3)]:
+    with open(f"{incoming_dir}/{name}", "w") as f:
+        f.write(content)
+
+print(f"✅ Wrote 3 incoming files to {incoming_dir}/")
+print("   wave_1.csv — 5 readings from SITE_DE_001 at 09:00")
+print("   wave_2.csv — 5 readings from SITE_ES_001 at 09:15")
+print("   wave_3.csv — 5 readings from SITE_DE_001 at 09:30")
+
+--- Cell 31 (markdown) ---
+### Task 4.1 — Configure the Auto Loader read stream
+
+Use `spark.readStream` with the `cloudFiles` format to create a streaming DataFrame that monitors the `incoming/` directory for new CSV files. Auto Loader will automatically track which files it has processed.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I configure Auto Loader in PySpark using spark.readStream and the cloudFiles format to read CSV files from a Unity Catalog volume, with schemaLocation?"*
+
+**Hints:**
+- Use `.format("cloudFiles")` on `spark.readStream`
+- Set `cloudFiles.format` to `csv`
+- Set `cloudFiles.schemaLocation` to a path inside the volume, e.g. `/Volumes/solaris_lab/bronze/raw_files/schema`
+- Set `cloudFiles.inferColumnTypes` to `true` so numeric columns are typed correctly
+- Load from `/Volumes/solaris_lab/bronze/raw_files/incoming/`
+
+--- Cell 32 (code) ---
+# TODO: Configure the Auto Loader read stream
+# Read from /Volumes/solaris_lab/bronze/raw_files/incoming/
+# Use CSV format with header, infer column types, store schema at /Volumes/solaris_lab/bronze/raw_files/schema
+
+df_autoloader = (
+    spark.readStream
+    # ... add your configuration here
+)
+
+--- Cell 33 (markdown) ---
+### Task 4.2 — Write the stream to a Delta table
+
+Write the Auto Loader stream to `solaris_lab.bronze.solar_readings_stream`. Use `trigger(availableNow=True)` to process all currently available files and then stop — this is the right pattern for scheduled ingestion jobs.
+
+You must also specify a **checkpoint location** so that Auto Loader can track progress and resume correctly if the job restarts.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How do I write an Auto Loader (spark.readStream cloudFiles) stream to a Unity Catalog table using writeStream, trigger(availableNow=True), and a checkpoint location?"*
+
+**Hints:**
+- Use `.writeStream` on your streaming DataFrame
+- Set `checkpointLocation` to `/Volumes/solaris_lab/bronze/raw_files/checkpoint`
+- Use `.trigger(availableNow=True)` to process all pending files and stop
+- Use `.toTable("solaris_lab.bronze.solar_readings_stream")` as the sink
+- Call `.awaitTermination()` on the query object to wait for completion
+
+--- Cell 34 (code) ---
+# TODO: Write the Auto Loader stream to solaris_lab.bronze.solar_readings_stream
+# Use trigger(availableNow=True) and set a checkpoint location
+
+query = (
+    df_autoloader.writeStream
+    # ... add your configuration here
+)
+
+query.awaitTermination()
+
+--- Cell 35 (markdown) ---
+### Task 4.3 — Verify the Auto Loader ingestion
+
+Query `solaris_lab.bronze.solar_readings_stream` to confirm all 15 rows (5 per wave × 3 waves) were loaded. Then run the write stream cell a second time to confirm that no duplicate rows are created — demonstrating Auto Loader's exactly-once guarantee.
+
+> 🤖 **Genie Code tip:** Ask:
+> *"How can I verify that Auto Loader ingested the correct number of rows and didn't create duplicates?"*
+
+**Hints:**
+- Use `SELECT COUNT(*) FROM solaris_lab.bronze.solar_readings_stream`
+- Re-run the cell in Task 4.2 and count again — the result should still be 15
+
+--- Cell 36 (code) ---
+%sql
+-- TODO: Count all rows in solar_readings_stream
+
+
+-- TODO: Show a sample of rows ordered by reading_timestamp
+
+--- Cell 37 (markdown) ---
+## ✅ Clean up (optional)
+
+If you want to remove the resources created in this lab, run the cell below.
+
+> ⚠️ This permanently deletes the `solaris_lab` catalog and all its contents, including all tables and volumes.
+
+--- Cell 38 (code) ---
+%sql
+-- Uncomment and run to remove all lab resources
+-- DROP CATALOG IF EXISTS solaris_lab CASCADE;
+
+================================================================================
+# 08-cleanse-transform-load-data-into-unity-catalog
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set up the Pristine Properties Platform
+
+Before diving into data work, you need to establish the Unity Catalog structure and load some property listings. All cells in this exercise are provided — simply run them in order.
+
+--- Cell 2 (markdown) ---
+### ✅ Provided: Create the Unity Catalog structure
+
+Run the cell below to create:
+- A catalog named `realestate_lab`
+- A **bronze** schema for raw ingested data
+- A **silver** schema for cleansed and transformed data
+- A managed volume `raw_files` inside `realestate_lab.bronze`
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS realestate_lab
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'Pristine Properties — real estate analytics platform for Dutch cities'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS realestate_lab.bronze
+  COMMENT 'Raw ingested data — as received from agent offices';
+
+CREATE SCHEMA IF NOT EXISTS realestate_lab.silver
+  COMMENT 'Cleansed and transformed data — ready for analytics';
+
+CREATE VOLUME IF NOT EXISTS realestate_lab.bronze.raw_files
+  COMMENT 'Landing zone for raw CSV files from agent systems';
+
+--- Cell 5 (markdown) ---
+### ✅ Provided: Populate the volume with sample data
+
+Run the cell below to write four sample CSV files into your volume:
+- `property_listings.csv` — 33 property listings with intentional quality issues (duplicates and nulls)
+- `real_estate_agents.csv` — 8 agent profiles across 7 Dutch cities
+- `property_sales.csv` — 3 completed sale transactions
+- `market_stats_wide.csv` — monthly average listing prices per city (wide format)
+
+You will use these files throughout Exercises 2–6.
+
+--- Cell 6 (code) ---
+# ✅ Run this cell — it writes sample CSV files to your volume
+
+listings_csv = """listing_id,property_id,agent_id,city,property_type,bedrooms,bathrooms,list_price,sqm,listing_date,last_updated,status
+1,PROP-001,101,Amsterdam,Apartment,2,1,285000.50,75,2026-01-15,2026-01-15 09:00:00,Active
+2,PROP-002,102,Rotterdam,House,4,2,449999.99,145,2026-01-20,2026-01-20 10:30:00,Active
+3,PROP-003,101,Amsterdam,Studio,,1,184999.99,42,2026-01-22,2026-01-22 11:00:00,Active
+4,PROP-004,103,Utrecht,Villa,5,3,874999.99,280,2026-02-01,2026-02-01 08:45:00,Active
+5,PROP-005,102,Rotterdam,Apartment,3,2,320500.25,95,2026-02-05,2026-02-05 14:00:00,Sold
+6,PROP-001,101,Amsterdam,Apartment,2,1,279000.00,75,2026-01-15,2026-03-01 09:00:00,Active
+7,PROP-006,104,The Hague,House,3,2,395000.00,120,2026-02-10,2026-02-10 16:00:00,Active
+8,PROP-007,103,Utrecht,Apartment,1,,165000.00,38,2026-02-14,2026-02-14 11:30:00,Active
+9,PROP-008,105,Eindhoven,House,4,3,519999.99,170,2026-02-18,2026-02-18 09:00:00,Active
+10,PROP-009,104,The Hague,Studio,1,1,145000.00,35,2026-02-22,2026-02-22 10:00:00,Active
+11,PROP-010,101,Amsterdam,Villa,6,4,1249999.99,400,2026-03-01,2026-03-01 14:30:00,Active
+12,PROP-002,102,Rotterdam,House,4,2,445000.00,145,2026-01-20,2026-03-05 10:30:00,Active
+13,PROP-011,105,Eindhoven,Apartment,2,1,195000.00,68,2026-03-08,2026-03-08 09:00:00,Sold
+14,PROP-012,106,Groningen,House,3,,309999.99,105,2026-03-10,2026-03-10 12:00:00,Active
+15,PROP-013,102,Rotterdam,Apartment,2,2,265000.00,82,2026-03-15,2026-03-15 15:00:00,Active
+16,PROP-014,106,Groningen,Studio,,1,129999.99,33,2026-03-18,2026-03-18 08:30:00,Active
+17,PROP-015,103,Utrecht,House,5,3,679999.99,210,2026-03-22,2026-03-22 11:00:00,Active
+18,PROP-016,104,The Hague,Apartment,1,1,175000.00,45,2026-03-25,2026-03-25 14:00:00,Sold
+19,PROP-017,101,Amsterdam,House,4,2,785000.50,195,2026-04-01,2026-04-01 09:30:00,Active
+20,PROP-018,105,Eindhoven,Villa,4,3,649999.99,230,2026-04-05,2026-04-05 10:00:00,Active
+21,PROP-019,106,Groningen,Apartment,3,2,215000.00,78,2026-04-08,2026-04-08 11:30:00,Active
+22,PROP-020,107,Breda,House,3,2,355000.00,115,2026-04-12,2026-04-12 14:00:00,Active
+23,PROP-003,101,Amsterdam,Studio,,1,190000.00,42,2026-01-22,2026-04-15 11:00:00,Active
+24,PROP-021,107,Breda,Apartment,2,1,225000.00,72,2026-04-18,2026-04-18 09:00:00,Active
+25,PROP-022,102,Rotterdam,Villa,5,,925000.00,310,2026-04-22,2026-04-22 16:00:00,Active
+26,PROP-023,103,Utrecht,House,3,2,,105,2026-04-25,2026-04-25 10:30:00,
+27,PROP-024,104,The Hague,Apartment,2,1,235000.00,71,2026-05-01,2026-05-01 09:00:00,Active
+28,PROP-025,105,Eindhoven,House,,2,410000.00,130,2026-05-05,2026-05-05 11:00:00,Active
+29,PROP-026,106,Groningen,Studio,1,1,138000.00,36,2026-05-08,2026-05-08 14:00:00,Active
+30,PROP-027,107,Breda,House,4,3,490000.00,158,2026-05-12,2026-05-12 09:30:00,Active
+31,PROP-028,101,Amsterdam,Apartment,3,2,345000.00,98,2026-05-15,2026-05-15 10:00:00,Active
+32,PROP-029,104,The Hague,House,4,2,,145,2026-05-18,2026-05-18 12:00:00,Active
+33,PROP-030,103,Utrecht,Apartment,2,1,245000.00,76,2026-05-22,2026-05-22 15:00:00,Active"""
+
+agents_csv = """agent_id,agent_name,agency,city,phone
+101,Sophie van den Berg,Makelaardij De Kust,Amsterdam,+31-20-1234567
+102,Jan de Vries,Vastgoed Noord,Rotterdam,+31-10-9876543
+103,Maria Hendriks,De Hoek Makelaars,Utrecht,+31-30-4567890
+104,Thomas Bakker,Haagse Woning,The Hague,+31-70-2345678
+105,Lisa Smits,Brainport Vastgoed,Eindhoven,+31-40-3456789
+106,Pieter Jansen,Stadspark Makelaars,Groningen,+31-50-8765432
+107,Emma Koster,Markdal Vastgoed,Breda,+31-76-5678901
+108,Robert Mulder,Canal Ring Realty,Amsterdam,+31-20-9012345"""
+
+sales_csv = """sale_id,property_id,sale_price,sale_date,days_on_market
+1,PROP-005,315000.00,2026-03-15,38
+2,PROP-011,192000.00,2026-04-20,43
+3,PROP-016,172500.00,2026-04-30,35"""
+
+market_csv = """city,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
+Amsterdam,385000,392000,401000,415000,422000,438000,445000,441000,428000,418000,405000,398000
+Rotterdam,295000,298000,305000,312000,318000,325000,321000,315000,308000,301000,295000,290000
+Utrecht,310000,315000,322000,328000,335000,342000,348000,344000,336000,328000,318000,312000
+The Hague,275000,280000,288000,295000,302000,308000,312000,306000,298000,291000,283000,278000
+Eindhoven,258000,262000,268000,275000,282000,288000,293000,289000,281000,273000,265000,260000
+Groningen,195000,198000,203000,208000,213000,218000,222000,219000,214000,208000,201000,196000
+Breda,245000,249000,255000,262000,268000,274000,279000,275000,268000,260000,253000,247000"""
+
+base = "/Volumes/realestate_lab/bronze/raw_files"
+dbutils.fs.put(f"{base}/property_listings.csv",   listings_csv, overwrite=True)
+dbutils.fs.put(f"{base}/real_estate_agents.csv",  agents_csv,   overwrite=True)
+dbutils.fs.put(f"{base}/property_sales.csv",      sales_csv,    overwrite=True)
+dbutils.fs.put(f"{base}/market_stats_wide.csv",   market_csv,   overwrite=True)
+print("CSV files written to volume.")
+
+--- Cell 7 (markdown) ---
+### ✅ Provided: Load data into bronze Delta tables
+
+Run the cell below to read all four CSV files from the volume and save them as Delta tables in the `realestate_lab.bronze` schema.
+
+--- Cell 8 (code) ---
+# ✅ Run this cell — it loads the CSV files into bronze Delta tables
+
+def load_csv(path, table):
+    (spark.read
+        .option("header", "true")
+        .option("inferSchema", "true")
+        .csv(path)
+        .write.mode("overwrite")
+        .saveAsTable(table))
+
+base = "/Volumes/realestate_lab/bronze/raw_files"
+load_csv(f"{base}/property_listings.csv",  "realestate_lab.bronze.listings")
+load_csv(f"{base}/real_estate_agents.csv", "realestate_lab.bronze.agents")
+load_csv(f"{base}/property_sales.csv",     "realestate_lab.bronze.sales")
+load_csv(f"{base}/market_stats_wide.csv",  "realestate_lab.bronze.market_stats")
+print("All tables loaded successfully.")
+
+--- Cell 9 (markdown) ---
+## Exercise 2: Profile the Listings Data
+
+Before transforming data, you need to understand what’s in it. In this exercise, you compute statistics for the `listings` table and generate a summary profile using both SQL and PySpark.
+
+> 💬 **Non-notebook task:** After completing this exercise, follow the steps in the lab setup page to create a visual **Snapshot** profile for `realestate_lab.bronze.listings` in Catalog Explorer.
+
+--- Cell 10 (markdown) ---
+### Task 1: Compute table statistics
+
+Use `ANALYZE TABLE` to compute statistics for all columns in `realestate_lab.bronze.listings`. Then use `DESCRIBE TABLE EXTENDED` to view the collected metrics.
+
+> 🤖 **Genie Code tip:** Ask Genie Code what statistics `ANALYZE TABLE` collects and how they help the query optimizer.
+> *Suggested prompt: "What statistics does ANALYZE TABLE collect in Databricks and how does the query optimizer use them?"*
+
+--- Cell 11 (code) ---
+%sql
+-- Task 1a: Compute statistics for all columns
+
+
+--- Cell 12 (code) ---
+%sql
+-- Task 1b: View the collected statistics
+
+
+--- Cell 13 (markdown) ---
+### Task 2: Generate summary statistics using PySpark
+
+Load the `realestate_lab.bronze.listings` table into a PySpark DataFrame and use `.describe()` to view summary statistics for all columns.
+
+> 🤖 **Genie Code tip:** Ask Genie Code what `.describe()` returns and how it differs from `.summary()`.
+> *Suggested prompt: "What is the difference between df.describe() and df.summary() in PySpark?"*
+
+--- Cell 14 (code) ---
+# Task 2: Load listings and view summary statistics
+
+
+--- Cell 15 (markdown) ---
+## Exercise 3: Choosing the Right Data Types
+
+Selecting the correct data type affects data correctness, precision, and performance. You explore three key decisions: `DECIMAL` vs `DOUBLE`, `TIMESTAMP` vs `TIMESTAMP_NTZ`, and the complex types `ARRAY`, `MAP`, and `STRUCT`.
+
+--- Cell 16 (markdown) ---
+### Task 1: DECIMAL vs DOUBLE for property prices
+
+Floating-point types like `DOUBLE` use binary representation internally, which can introduce small but significant rounding errors — a serious problem for financial data like property prices.
+
+First, run the provided cell to observe this problem. Then write a `CREATE TABLE` statement that stores `list_price` as `DECIMAL(12,2)` by creating `realestate_lab.silver.listings_typed` from the bronze table.
+
+> 🤖 **Genie Code tip:** Ask Genie Code why `DOUBLE` causes precision errors with prices.
+> *Suggested prompt: "Why does storing a price like 449999.99 as DOUBLE in SQL lead to precision errors, and what type should I use instead?"*
+
+--- Cell 17 (code) ---
+%sql
+-- ✅ Provided: run this to observe floating-point imprecision with DOUBLE
+SELECT
+  -- Does 0.1 + 0.2 = 0.3 with DOUBLE?
+  CAST(0.1 AS DOUBLE) + CAST(0.2 AS DOUBLE) as sum_double,
+  CAST(0.1 AS DOUBLE) + CAST(0.2 AS DOUBLE) = CAST(0.3 AS DOUBLE)        AS double_exact,   -- returns FALSE
+  CAST(0.1 AS DECIMAL(2,1)) + CAST(0.2 AS DECIMAL(2,1)) as sum_decimal,
+  CAST(0.1 AS DECIMAL(2,1)) + CAST(0.2 AS DECIMAL(2,1)) = CAST(0.3 AS DECIMAL(2,1))        AS decimal_exact  -- returns TRUE
+
+--- Cell 18 (code) ---
+%sql
+-- Task 1: Create realestate_lab.silver.listings_typed with CAST for each column
+- Hint: CREATE OR REPLACE TABLE ... AS SELECT CAST(...) ...
+
+
+--- Cell 19 (markdown) ---
+### Task 2: TIMESTAMP vs TIMESTAMP_NTZ for viewing appointments
+
+When scheduling property viewings, choose the right temporal type:
+- `TIMESTAMP`: stores in UTC; displayed adjusted to the session timezone. Use for global events.
+- `TIMESTAMP_NTZ`: stores exactly as entered, no conversion. Use for local scheduled appointments.
+
+Run the provided cell to see how the two types behave differently when the session timezone changes.
+
+> 🤖 **Genie Code tip:** Ask Genie Code when to prefer `TIMESTAMP_NTZ` over `TIMESTAMP`.
+> *Suggested prompt: "When should I use TIMESTAMP_NTZ instead of TIMESTAMP in Azure Databricks for property viewing appointments?"*
+
+--- Cell 20 (code) ---
+%sql
+-- ✅ Provided: observe how TIMESTAMP and TIMESTAMP_NTZ react to a timezone change
+CREATE OR REPLACE TEMP VIEW viewing_appointments AS
+SELECT *
+FROM VALUES
+  ('VA001', 'PROP-001', TIMESTAMP '2026-06-15 09:00:00', TIMESTAMP_NTZ '2026-06-15 09:00:00'),
+  ('VA002', 'PROP-005', TIMESTAMP '2026-06-15 14:30:00', TIMESTAMP_NTZ '2026-06-15 14:30:00'),
+  ('VA003', 'PROP-010', TIMESTAMP '2026-06-16 10:00:00', TIMESTAMP_NTZ '2026-06-16 10:00:00')
+AS t(appointment_id, property_id, viewing_time_ts, viewing_time_ntz);
+
+-- Switch to New York timezone -- TIMESTAMP values shift; TIMESTAMP_NTZ stays unchanged
+SET TIME ZONE 'America/New_York';
+SELECT appointment_id, property_id, viewing_time_ts, viewing_time_ntz
+FROM viewing_appointments;
+
+--- Cell 21 (code) ---
+%sql
+-- ✅ Reset the session timezone back to UTC when done
+SET TIME ZONE 'UTC';
+
+--- Cell 22 (markdown) ---
+### Task 3: Complex types — ARRAY, MAP, and STRUCT
+
+Property listings often carry nested or repeated data: a list of amenities, a set of flexible features, and a structured address. These map naturally to `ARRAY`, `MAP`, and `STRUCT`.
+
+**Task 3a:** Create a temp view called `listings_enriched` with these columns (provide at least 3 rows of sample data using `VALUES`):
+- `property_id` STRING
+- `amenities` ARRAY\<STRING\> — e.g., `ARRAY('Parking', 'Balcony', 'Storage')`
+- `features` MAP\<STRING, STRING\> — e.g., `MAP('energy_label', 'A', 'heating', 'central')`
+- `address` STRUCT\<street: STRING, city: STRING, postal_code: STRING\>
+
+**Task 3b:** Query `listings_enriched` and access: the first amenity (index 0), the `energy_label` from features, and the `city` from address.
+
+> 🤖 **Genie Code tip:** Ask how to define and access ARRAY, MAP, and STRUCT in Databricks SQL.
+> *Suggested prompt: "How do I create a temp view in Databricks SQL with ARRAY, MAP, and STRUCT columns, and how do I access elements from each?"*
+
+--- Cell 23 (code) ---
+%sql
+-- Task 3a: Create listings_enriched temp view with ARRAY, MAP, and STRUCT columns
+
+
+--- Cell 24 (code) ---
+%sql
+-- Task 3b: Select from listings_enriched accessing: amenities[0], features['energy_label'], address.city
+
+
+--- Cell 25 (markdown) ---
+## Exercise 4: Handling Duplicates and Missing Values
+
+The raw listings data contains duplicate records (the same property re-submitted with updated prices) and missing values in several columns. In this exercise you identify and resolve both issues.
+
+--- Cell 26 (markdown) ---
+### Task 1: Identify duplicate property listings
+
+Write a SQL query using `GROUP BY` and `HAVING` to find all `property_id` values that appear more than once.
+
+> 🤖 **Genie Code tip:** Ask Genie Code for a SQL pattern to find duplicate values.
+> *Suggested prompt: "Write a SQL query to find duplicate property_id values in realestate_lab.bronze.listings."*
+
+--- Cell 27 (code) ---
+%sql
+-- Task 1: Find property_id values that appear more than once
+--Hint: GROUP BY property_id HAVING COUNT(*) > 1
+
+
+--- Cell 28 (markdown) ---
+### Task 2: Keep the most recently updated listing per property
+
+Use `ROW_NUMBER()` with the `QUALIFY` clause to keep only the most recently updated row for each `property_id`.
+
+> 🤖 **Genie Code tip:** Ask Genie Code about `ROW_NUMBER()` with `QUALIFY` for deduplication.
+> *Suggested prompt: "How do I use ROW_NUMBER() with QUALIFY in Databricks SQL to keep only the latest record per property_id ordered by last_updated?"*
+
+--- Cell 29 (code) ---
+%sql
+-- Task 2: Use ROW_NUMBER() with QUALIFY to keep the most recently updated row per property_id
+-- Hint: QUALIFY ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY last_updated DESC) = 1
+
+
+--- Cell 30 (markdown) ---
+### Task 3: Deduplicate using PySpark
+
+Using PySpark, load the listings table, sort by `last_updated` descending, and call `dropDuplicates(["property_id"])`. Print the count before and after.
+
+> 🤖 **Genie Code tip:** Ask Genie Code how sorting interacts with `dropDuplicates`.
+> *Suggested prompt: "How does orderBy work together with dropDuplicates in PySpark to control which duplicate row is kept?"*
+
+--- Cell 31 (code) ---
+# Task 3: Sort by last_updated DESC and dropDuplicates(['property_id'])
+# Print counts before and after, then display the result
+
+
+--- Cell 32 (markdown) ---
+### Task 4: Handle null and missing values
+
+The listings table has nulls in several columns. Apply these rules:
+- `list_price` is null for withdrawn listings — **drop these rows**
+- `bedrooms` is null for some units — **fill with `0`**
+- `bathrooms` is null for some properties — **fill with `1.0`**
+- `status` is null for incomplete records — **fill with `'Unknown'`**
+
+Use `dropna()` and `fillna()`. Print counts before and after.
+
+> 🤖 **Genie Code tip:** Ask Genie Code how to chain dropna and fillna in PySpark.
+> *Suggested prompt: "How do I use dropna and fillna together in PySpark to drop rows where list_price is null and then fill other null columns?"*
+
+--- Cell 33 (code) ---
+# Task 4: Drop rows where list_price is null, then fillna for bedrooms, bathrooms, status
+# Print original and cleaned counts, then display the result
+
+
+--- Cell 34 (markdown) ---
+## Exercise 5: Joining Listings with Agents and Sales Data
+
+In this exercise you combine the listings table with agent profiles and sales records using PySpark joins.
+
+--- Cell 35 (markdown) ---
+### Task 1: Inner join listings with agents
+
+Join `realestate_lab.bronze.listings` with `realestate_lab.bronze.agents` on `agent_id` using an **inner join**. Select: `listing_id`, `property_id`, `city` (from listings), `list_price`, `agent_name`, `agency`.
+
+> 🤖 **Genie Code tip:** Ask Genie Code for the correct PySpark join syntax with column aliases.
+> *Suggested prompt: "How do I inner join two PySpark DataFrames on agent_id and select columns from both using DataFrame aliases?"*
+
+--- Cell 36 (code) ---
+# Task 1: Inner join listings with agents on agent_id
+# Select: listing_id, property_id, city (from listings), list_price, agent_name, agency
+
+
+--- Cell 37 (markdown) ---
+### Task 2: Find agents with no listings
+
+Perform a **left join** with `agents` on the left and `listings` on the right. Filter for rows where `listing_id` is null to identify agents with no current listings.
+
+> 🤖 **Genie Code tip:** Ask Genie Code how a left join helps find records that exist in one table but not another.
+> *Suggested prompt: "How do I use a left join in PySpark to find rows in agents that have no match in listings?"*
+
+--- Cell 38 (code) ---
+# Task 2: Left join agents (left) with listings (right); filter where listing_id IS NULL
+# Select: agent_id, agent_name, agency
+
+
+--- Cell 39 (markdown) ---
+### Task 3: Find unsold listings
+
+Join `listings` (left) with `sales` (right) on `property_id` using a **left join**. Filter for rows where `sale_id IS NULL` to find properties that have never been sold.
+
+> 🤖 **Genie Code tip:** Ask Genie Code about the left join + null filter pattern.
+> *Suggested prompt: "How do I find rows in the listings table with no matching sale in the sales table using a PySpark left join?"*
+
+--- Cell 40 (code) ---
+# Task 3: Left join listings (left) with sales (right); filter where sale_id IS NULL
+# Select: listing_id, property_id, city, property_type, list_price, listing_date
+
+
+--- Cell 41 (markdown) ---
+## Exercise 6: Pivot and Unpivot Market Statistics
+
+Data often arrives in a shape that doesn’t match what analysis requires. In this exercise you rotate rows into columns (pivot) and convert wide-format columns back into rows (unpivot).
+
+--- Cell 42 (markdown) ---
+### Task 1: Pivot listing counts by property type
+
+Using the bronze listings, write a SQL `PIVOT` query that counts the number of **active** listings per city, with one column per `property_type` (`Apartment`, `House`, `Studio`, `Villa`).
+
+Expected output shape:
+
+| city | Apartment | House | Studio | Villa |
+|---|---|---|---|---|
+| Amsterdam | 3 | 1 | 1 | 1 |
+
+> 🤖 **Genie Code tip:** Ask Genie Code for the `PIVOT` clause syntax in Databricks SQL.
+> *Suggested prompt: "How do I use the PIVOT clause in Databricks SQL to count active listings per city, with one column per property type?"*
+
+--- Cell 43 (code) ---
+%sql
+-- Task 1: Pivot active listing counts by property_type
+-- Columns: city, Apartment, House, Studio, Villa
+
+
+
+--- Cell 44 (markdown) ---
+### Task 2: Unpivot the monthly market statistics
+
+The `realestate_lab.bronze.market_stats` table has one row per city and 12 monthly price columns. Use the `UNPIVOT` clause to transform it into long format with columns: `city`, `month`, `avg_price`.
+
+> 🤖 **Genie Code tip:** Ask Genie Code for the UNPIVOT syntax in Databricks SQL.
+> *Suggested prompt: "How do I unpivot 12 monthly columns (Jan through Dec) into rows using the UNPIVOT clause in Databricks SQL?"*
+
+--- Cell 45 (code) ---
+%sql
+-- Task 2: Unpivot the 12 monthly columns into rows
+-- Expected columns: city, month, avg_price
+
+
+--- Cell 46 (markdown) ---
+## Clean up
+
+Run the cell below to remove all lab resources when you are done.
+
+--- Cell 47 (code) ---
+%sql
+-- Uncomment and run to remove all lab resources when you are done
+-- DROP CATALOG IF EXISTS realestate_lab CASCADE;
+
+================================================================================
+# 09-implement-manage-data-quality-constraints-unity-catalog
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set up the ClearCover Insurance Data Platform
+
+Before the data quality pipeline can run, the Unity Catalog structure and raw source data must be in place.
+
+Run each cell in this notebook **from top to bottom**. After setup is complete, return to the lab instructions page and continue with Exercise 2.
+
+--- Cell 2 (markdown) ---
+### Task 1: Create the Unity Catalog structure
+
+This cell is provided for you — run it to prepare your environment.
+
+It creates the following Unity Catalog objects:
+- A **catalog** named `insurance_lab` — the top-level namespace for the ClearCover Insurance platform
+- A **bronze schema** inside `insurance_lab` — raw claims data, exactly as it arrives from source systems
+- A **silver schema** inside `insurance_lab` — validated and type-safe claims
+- A **gold schema** inside `insurance_lab` — aggregated reporting data
+- A **volume** named `raw_files` inside `insurance_lab.bronze` — landing zone for incoming CSV claim files
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+spark.sql(f"""
+    CREATE CATALOG IF NOT EXISTS insurance_lab
+    MANAGED LOCATION '{storage_root}'
+    COMMENT 'ClearCover Insurance analytics platform'
+""")
+
+--- Cell 4 (code) ---
+%sql
+CREATE SCHEMA IF NOT EXISTS insurance_lab.bronze
+  COMMENT 'Raw claims data, unmodified as received from source systems';
+
+CREATE SCHEMA IF NOT EXISTS insurance_lab.silver
+  COMMENT 'Validated claims, type-checked and quality-constrained';
+
+CREATE SCHEMA IF NOT EXISTS insurance_lab.gold
+  COMMENT 'Aggregated reporting data for dashboards';
+
+CREATE VOLUME IF NOT EXISTS insurance_lab.bronze.raw_files
+  COMMENT 'Landing zone for raw CSV claim files';
+
+--- Cell 5 (markdown) ---
+### Task 2: Write the raw claims CSV to the volume
+
+The dataset contains **intentional quality issues**: missing identifiers, malformed dates, invalid amounts, and incorrect status values — the exact problems your pipeline will fix.
+
+> `claim_date` and `claim_amount` are intentionally loaded as **STRING** columns. Type validation is the pipeline's job.
+
+--- Cell 6 (code) ---
+# ✅ Run this cell — writes the raw claims CSV to the volume
+volume_path = '/Volumes/insurance_lab/bronze/raw_files'
+
+rows = [
+    'claim_id,policy_id,customer_id,claim_date,incident_date,claim_amount,claim_type,status,coverage_amount,agent_code',
+    'CLM-001,POL-1001,CUST-001,2026-01-05,2026-01-03,4500.00,AUTO,OPEN,25000.00,AGT-01',
+    'CLM-002,POL-1002,CUST-002,2026-01-07,2026-01-06,12000.00,HOME,PENDING,150000.00,AGT-02',
+    'CLM-003,POL-1003,CUST-003,2026-01-10,2026-01-09,250.00,HEALTH,CLOSED,5000.00,AGT-01',
+    'CLM-004,,CUST-004,2026-01-12,2026-01-11,8900.00,AUTO,OPEN,30000.00,AGT-03',
+    'CLM-005,POL-1005,CUST-005,2026-01-14,2026-01-13,,LIFE,PENDING,200000.00,AGT-02',
+    ',POL-1006,CUST-006,2026-01-15,2026-01-14,3200.00,HOME,CLOSED,80000.00,AGT-04',
+    'CLM-007,POL-1007,CUST-007,not-a-date,2026-01-16,7600.00,AUTO,OPEN,35000.00,AGT-03',
+    'CLM-008,POL-1008,CUST-008,2026-01-18,2026-01-17,N/A,HEALTH,PENDING,10000.00,AGT-01',
+    'CLM-009,POL-1009,CUST-009,2026-01-20,2026-01-19,-500.00,HOME,INVALID_STATUS,120000.00,AGT-04',
+    'CLM-010,POL-1010,CUST-010,2026-01-22,2026-01-21,15000.00,VEHICLE,CLOSED,50000.00,AGT-02',
+    'CLM-011,POL-1011,CUST-011,2026-01-25,2026-01-24,1800.00,AUTO,PENDING,20000.00,AGT-05',
+    'CLM-012,POL-1012,CUST-012,2026-01-27,2026-01-26,6400.00,HEALTH,OPEN,15000.00,AGT-01',
+    'CLM-013,POL-1013,CUST-013,2026-01-28,2026-01-27,92000.00,LIFE,CLOSED,300000.00,AGT-03',
+    'CLM-014,POL-1014,CUST-014,2026-01-30,invalid-date,-900.00,AUTO,PENDING,22000.00,AGT-02',
+    'CLM-015,POL-1015,CUST-015,2026-02-01,2026-01-31,3750.00,HOME,OPEN,95000.00,AGT-05',
+    'CLM-016,POL-1016,CUST-016,2026-02-03,2026-02-02,550.00,HEALTH,CLOSED,8000.00,AGT-02',
+    'CLM-017,POL-1017,CUST-017,2026-02-05,2026-02-04,18500.00,LIFE,PENDING,250000.00,AGT-03',
+    'CLM-018,POL-1018,CUST-018,2026-02-07,2026-02-06,2200.00,AUTO,OPEN,28000.00,AGT-01',
+    'CLM-019,POL-1019,,2026-02-09,2026-02-08,4100.00,HOME,PENDING,110000.00,AGT-04',
+    'CLM-020,POL-1020,CUST-020,2026-02-11,2026-02-10,67000.00,LIFE,CLOSED,400000.00,AGT-03'
+]
+
+dbutils.fs.put(volume_path + '/insurance_claims_raw.csv', '\n'.join(rows) + '\n', overwrite=True)
+print('✅ CSV written to', volume_path)
+
+--- Cell 7 (markdown) ---
+### Task 3: Load the CSV into the bronze Delta table
+
+Note the explicit schema — `claim_date` and `claim_amount` are kept as **STRING** so the pipeline type-checking exercises work correctly.
+
+--- Cell 8 (code) ---
+# ✅ Run this cell — loads the CSV into the bronze Delta table
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+
+schema = StructType([
+    StructField('claim_id',        StringType(), True),
+    StructField('policy_id',       StringType(), True),
+    StructField('customer_id',     StringType(), True),
+    StructField('claim_date',      StringType(), True),   # intentionally STRING
+    StructField('incident_date',   StringType(), True),
+    StructField('claim_amount',    StringType(), True),   # intentionally STRING
+    StructField('claim_type',      StringType(), True),
+    StructField('status',          StringType(), True),
+    StructField('coverage_amount', DoubleType(), True),
+    StructField('agent_code',      StringType(), True),
+])
+
+volume_path = '/Volumes/insurance_lab/bronze/raw_files'
+
+df = (
+    spark.read
+    .option('header', 'true')
+    .option('nullValue', '')
+    .schema(schema)
+    .csv(volume_path + '/insurance_claims_raw.csv')
+)
+
+(
+    df.write
+    .format('delta')
+    .mode('overwrite')
+    .saveAsTable('insurance_lab.bronze.claims_raw')
+)
+
+print('✅ Table insurance_lab.bronze.claims_raw created')
+print(f'   Total rows loaded: {df.count()}')
+
+--- Cell 9 (markdown) ---
+### Verify: Inspect the raw data
+
+Run the cells below to confirm the table was created successfully and preview the data.
+
+Scan the results for rows with quality issues — these are the targets for your pipeline exercises.
+
+--- Cell 10 (code) ---
+%sql
+SELECT *
+FROM insurance_lab.bronze.claims_raw
+ORDER BY claim_id NULLS LAST;
+
+--- Cell 11 (code) ---
+%sql
+DESCRIBE TABLE insurance_lab.bronze.claims_raw;
+
+--- Cell 12 (markdown) ---
+---
+
+✅ **Setup complete!** Return to the lab instructions page and continue with Exercise 2.
+
+--- Cell 13 (code) ---
+%sql
+-- Optional cleanup — uncomment to remove all lab resources when done
+-- DROP CATALOG IF EXISTS insurance_lab CASCADE;
+
+================================================================================
+# 10-design-implement-data-pipelines
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Ingest Raw Booking Data (Bronze Layer)
+
+The **Bronze layer** stores raw, unmodified data exactly as it arrives from source systems. In a production pipeline, data would arrive from a Property Management System (PMS). For this lab, a sample dataset representing bookings across five GlobStay properties is provided for you.
+
+Data issues are intentional — they reflect real-world conditions you will address in the Silver layer.
+
+--- Cell 2 (markdown) ---
+### ✅ Provided: Create the Unity Catalog structure and sample data
+
+Run the two cells below to:
+- Create a catalog `hospitality_lab` with `bronze`, `silver`, and `gold` schemas
+- Create a sample raw bookings DataFrame containing deliberate quality issues
+
+Inspect the output carefully — you will need to understand the data issues before tackling Exercise 2.
+
+--- Cell 3 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+--- Cell 4 (code) ---
+# ✅ Run this cell — creates the Unity Catalog structure
+
+catalog = "hospitality_lab"
+
+spark.sql(f"CREATE CATALOG IF NOT EXISTS {catalog} MANAGED LOCATION '{storage_root}' COMMENT 'GlobStay hospitality analytics platform'")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.bronze COMMENT 'Raw ingested booking data'")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.silver COMMENT 'Cleaned and validated booking data'")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.gold   COMMENT 'Analytics-ready aggregated data'")
+
+print(f"✅ Catalog '{catalog}' and schemas bronze / silver / gold created.")
+
+--- Cell 5 (code) ---
+# ✅ Run this cell — creates the raw bookings DataFrame
+
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType
+
+schema = StructType([
+    StructField("booking_id",      StringType(),  True),
+    StructField("property_id",     StringType(),  True),
+    StructField("property_name",   StringType(),  True),
+    StructField("check_in_date",   StringType(),  True),
+    StructField("check_out_date",  StringType(),  True),
+    StructField("room_type",       StringType(),  True),
+    StructField("rate_per_night",  DoubleType(),  True),
+    StructField("guest_id",        StringType(),  True),
+    StructField("guest_name",      StringType(),  True),
+    StructField("guest_email",     StringType(),  True),
+    StructField("booking_status",  StringType(),  True),
+    StructField("channel",         StringType(),  True),
+    StructField("adults",          IntegerType(), True),
+    StructField("children",        IntegerType(), True),
+])
+
+raw_data = [
+    # (booking_id, property_id, property_name, check_in, check_out, room_type, rate, guest_id, guest_name, guest_email, status, channel, adults, children)
+    ("B001","P01","Grand Harbor Hotel",   "2025-06-15","2025-06-18","Deluxe",  250.00,"G001","Alex Rivera",      "alex.r@email.com",    "confirmed","direct",    2,0),
+    ("B002","P01","Grand Harbor Hotel",   "2025-06-20","2025-06-22","Suite",   450.00,"G002","Maria Santos",     "m.santos@corp.com",   "confirmed","corporate", 1,0),
+    ("B003","P02","Sunset Beach Resort",  "2025-07-01","2025-07-08","Sea View",180.00,"G003","James Chen",       "jchen@email.com",     "confirmed","ota",       2,2),
+    ("B004","P02","Sunset Beach Resort",  "2025-07-10","2025-07-12","Garden",  140.00,"G004","Sarah Johnson",    None,                  "confirmed","direct",    2,0),  # null email
+    ("B005","P03","Mountain Pines Lodge", "2025-08-05","2025-08-10",None,       120.00,"G005","Robert Kim",       "rkim@email.com",      "cancelled","ota",       1,0),  # null room_type
+    ("B006","P03","Mountain Pines Lodge", "2025-08-15","2025-08-12","Standard",110.00,"G006","Emily Brown",      "ebrown@email.com",    "confirmed","direct",    2,1),  # check_out < check_in
+    ("B001","P01","Grand Harbor Hotel",   "2025-06-15","2025-06-18","Deluxe",  250.00,"G001","Alex Rivera",      "alex.r@email.com",    "confirmed","direct",    2,0),  # DUPLICATE of B001
+    ("B007","P04","City Center Inn",      "2025-09-10","2025-09-11","Standard",-50.00,"G007","Michael Turner",   "mturner@email.com",   "confirmed","corporate", 1,0),  # negative rate
+    ("B008","P04","City Center Inn",      "2025-09-15","2025-09-18","Superior",195.00,"G008","Lisa Wong",        "lwong@email.com",     "confirmed","ota",       2,0),
+    ("B009","P01","Grand Harbor Hotel",   "2025-10-01","2025-10-05","Suite",   480.00,"G009","Carlos Mendez",    "cmendes@biz.com",     "confirmed","corporate", 2,0),
+    ("B010","P02","Sunset Beach Resort",  "2025-11-20","2025-11-25","Sea View",155.00,"G010","Aisha Patel",      "aisha.p@email.com",   "confirmed","direct",    2,1),
+    ("B011","P03","Mountain Pines Lodge", "2025-12-22","2025-12-26","Deluxe",  180.00,"G011","Thomas Muller",    "tmuller@email.com",   "confirmed","ota",       2,0),
+    ("B012","P04","City Center Inn",      "2025-10-08","2025-10-09","Standard",  0.00,"G012","Yuki Tanaka",      "ytanaka@email.com",   "confirmed","direct",    1,0),  # zero rate
+    ("B013","P01","Grand Harbor Hotel",   "2025-07-04","2025-07-07","Deluxe",  275.00,"G013","Sophie Anderson",  "sanderson@travel.com","confirmed","ota",       2,2),
+    ("B014","P02","Sunset Beach Resort",  "2025-08-20","2025-08-27","Suite",   350.00,"G014","Daniel Hart",      "dhart@email.com",     "pending",  "direct",    2,0),
+    ("B015","P05","Airport Transit Hotel","2025-06-30","2025-07-01","Standard", 99.00,"G015","Priya Sharma",     None,                  "confirmed","ota",       1,0),  # null email
+]
+
+raw_df = spark.createDataFrame(raw_data, schema)
+raw_df.display()
+print(f"\nRaw records: {raw_df.count()}")
+
+--- Cell 6 (markdown) ---
+### 🎯 Challenge: Write raw data to a Bronze table
+
+Write `raw_df` to a Delta table named **`bookings_bronze`** in the `hospitality_lab.bronze` schema.
+
+**Requirements:**
+- Use `overwrite` mode so the cell is re-runnable
+- After writing, verify the record count matches the raw DataFrame
+
+> 🤖 **Genie Code tip:** Ask *"How do I write a PySpark DataFrame to a Unity Catalog table using saveAsTable with overwrite mode?"*
+
+--- Cell 7 (code) ---
+# YOUR CODE HERE
+# Write raw_df to hospitality_lab.bronze.bookings_bronze (overwrite mode)
+# Then verify the record count
+
+
+--- Cell 8 (markdown) ---
+## Exercise 2: Clean and Validate Booking Data (Silver Layer)
+
+The **Silver layer** contains cleaned, validated data that downstream processes can rely on. Each quality issue present in the bronze layer must be addressed:
+
+| Issue | Found in | Rule |
+|---|---|---|
+| Duplicate bookings | B001 appears twice | Keep only the first occurrence per `booking_id` |
+| Null `room_type` | B005 | Exclude records with no room type |
+| Invalid date order | B006 (`check_out` before `check_in`) | Exclude records where `check_out_date <= check_in_date` |
+| Non-positive rate | B007 (–50), B012 (0) | Exclude records where `rate_per_night <= 0` |
+
+> **Note:** Null `guest_email` values (B004, B015) are acceptable — not all bookings require an email address.
+
+--- Cell 9 (markdown) ---
+### 🎯 Challenge: Create the Silver table
+
+Read from `hospitality_lab.bronze.bookings_bronze`, apply all four cleaning rules, and write the result to **`hospitality_lab.silver.bookings_silver`** (overwrite mode).
+
+**Hints:**
+- Use `.dropDuplicates(["booking_id"])` to deduplicate
+- Use `.filter(col("room_type").isNotNull())` to remove nulls
+- Import `to_date` and `datediff` from `pyspark.sql.functions` to compare dates
+- Chain `.filter()` calls for each rule
+
+After writing, print both the Bronze and Silver record counts to confirm records were removed.
+
+> 🤖 **Genie Code tip:** Ask *"How do I filter PySpark rows where check_out_date is not after check_in_date using date comparison?"*
+
+--- Cell 10 (code) ---
+# YOUR CODE HERE
+# Read from bronze, apply cleaning rules, write to silver
+# Print bronze count vs silver count
+
+
+--- Cell 11 (markdown) ---
+## Exercise 3: Build Analytics-Ready Data (Gold Layer)
+
+The **Gold layer** contains highly curated, business-facing datasets. GlobStay leadership wants two analytics tables:
+
+1. **`property_performance`** — total confirmed bookings, nights sold, and revenue per hotel property
+2. **`channel_performance`** — booking volume and revenue broken down by booking channel (direct, OTA, corporate)
+
+
+--- Cell 12 (markdown) ---
+### 🎯 Challenge 3a: Property performance table
+
+Create a Gold table `hospitality_lab.gold.property_performance` using Spark SQL.
+
+**Requirements:**
+- Source: `hospitality_lab.silver.bookings_silver`
+- Filter to `booking_status = 'confirmed'` only
+- Columns: `property_id`, `property_name`, `confirmed_bookings`, `total_nights`, `total_revenue`
+- Calculate `total_nights` using `DATEDIFF(check_out_date, check_in_date)`
+- Calculate `total_revenue` as `total_nights × rate_per_night`
+- Order by `total_revenue DESC`
+
+> 🤖 **Genie Code tip:** Ask *"Write a Spark SQL CREATE OR REPLACE TABLE statement that aggregates booking revenue per property using DATEDIFF and SUM."*
+
+--- Cell 13 (code) ---
+# YOUR CODE HERE — use %sql or spark.sql()
+# Create hospitality_lab.gold.property_performance
+
+
+--- Cell 14 (markdown) ---
+### 🎯 Challenge 3b: Booking channel performance table
+
+Create a Gold table `hospitality_lab.gold.channel_performance` showing how each booking channel contributes to GlobStay revenue.
+
+**Requirements:**
+- Source: `hospitality_lab.silver.bookings_silver`
+- Filter to `booking_status = 'confirmed'` only
+- Columns: `channel`, `booking_count`, `total_revenue`, `avg_revenue_per_booking` (rounded to 2 decimal places)
+- Order by `total_revenue DESC`
+
+> 🤖 **Genie Code tip:** Ask *"How do I calculate average revenue per booking in Spark SQL using ROUND and AVG?"*
+
+--- Cell 15 (code) ---
+# YOUR CODE HERE
+# Create hospitality_lab.gold.channel_performance
+
+
+--- Cell 16 (markdown) ---
+## Exercise 4: Error Handling in Pipeline Notebooks
+
+When a notebook runs as a Lakeflow Job task, it must handle errors gracefully and communicate its outcome to downstream tasks. Two key patterns are:
+
+1. **`try/except` with `PySparkException`** — catch specific Spark errors and handle them without crashing the notebook
+2. **`dbutils.notebook.exit()`** — signal success or failure with a structured message that the job can inspect
+
+
+--- Cell 17 (markdown) ---
+### 🎯 Challenge 4a: Implement safe table reading with try/except
+
+Write a function `safe_read_table(table_name)` that:
+1. Tries to read the table using `spark.table(table_name)`
+2. Catches `PySparkException` from `pyspark.errors`
+3. Prints a descriptive message with the error class if the table is not found
+4. Returns `None` on error, or the DataFrame on success
+
+Test it with a valid table and a non-existent table to confirm both paths work.
+
+**Hints:**
+- Import: `from pyspark.errors import PySparkException`
+- Use `e.getErrorClass()` to get a structured error code
+- Re-raise unexpected errors that you haven't handled
+
+> 🤖 **Genie Code tip:** Ask *"Show me how to catch a PySparkException in Python and print its error class."*
+
+--- Cell 18 (code) ---
+# YOUR CODE HERE
+# Define safe_read_table(table_name) with try/except
+# Test with valid and invalid table names
+
+
+--- Cell 19 (markdown) ---
+### 🎯 Challenge 4b: Signal task outcome with dbutils.notebook.exit()
+
+When a notebook runs as a Lakeflow Job task, calling `dbutils.notebook.exit()` lets downstream tasks read the outcome using `{{tasks.<task_name>.values.<key>}}`.
+
+Write a function `report_pipeline_outcome(table_name)` that:
+1. Reads the specified table and counts its records
+2. On success, calls `dbutils.notebook.exit()` with the message `"SUCCESS: Processed <n> records from <table_name>"`
+3. On any exception, calls `dbutils.notebook.exit()` with the message `"FAILED: <error message>"`
+
+> ⚠️ **Warning:** `dbutils.notebook.exit()` halts notebook execution immediately. Define the function but **do not call it** — instead, leave the call commented out. In the job, calling it is the correct behaviour.
+
+> 🤖 **Genie Code tip:** Ask *"How does dbutils.notebook.exit work in Azure Databricks when a notebook runs as a job task?"*
+
+--- Cell 20 (code) ---
+# YOUR CODE HERE
+# Define report_pipeline_outcome(table_name)
+# Leave the function call commented out
+
+
+--- Cell 21 (markdown) ---
+## Exercise 5: Parameterized Notebook Tasks
+
+Reusable pipeline notebooks accept parameters at runtime — making the same notebook work for different scenarios (e.g. different dates, environments, or filter values) without code changes.
+
+Two mechanisms are used in Lakeflow Jobs:
+- **`dbutils.widgets`** — pass parameters *into* a notebook from a job task configuration
+- **`dbutils.jobs.taskValues`** — pass values *between* notebook tasks in the same job run
+
+
+--- Cell 22 (markdown) ---
+### 🎯 Challenge 5a: Add a runtime widget parameter
+
+Add a text widget named `booking_status` with default value `confirmed` and label `Booking Status Filter`.
+
+Then retrieve the widget value and use it to filter `hospitality_lab.silver.bookings_silver`. Display the filtered result and print the record count.
+
+**Hints:**
+- `dbutils.widgets.text(name, default, label)`
+- `dbutils.widgets.get(name)` returns the current value
+- In a Lakeflow Job, the task **Parameters** configuration overrides the default value at runtime
+
+> 🤖 **Genie Code tip:** Ask *"How do I create a text widget in Databricks and retrieve its value to filter a DataFrame?"*
+
+--- Cell 23 (code) ---
+# YOUR CODE HERE
+# Add a widget 'booking_status' (default: 'confirmed', label: 'Booking Status Filter')
+# Retrieve the value and filter bookings_silver, then display results
+
+
+--- Cell 24 (markdown) ---
+### 🎯 Challenge 5b: Pass values to downstream tasks
+
+After processing, a notebook task can share computed values with downstream tasks using `dbutils.jobs.taskValues.set()`.
+
+Set two task values from the Silver table:
+1. Key `silver_record_count` — the number of records in `bookings_silver`
+2. Key `properties_processed` — a Python list of distinct `property_id` values
+
+Then print what was set so you can verify it.
+
+> **Note:** `dbutils.jobs.taskValues` is only available inside a Lakeflow Job run. In an interactive notebook session it prints a warning and is a no-op — this is expected.
+
+> 🤖 **Genie Code tip:** Ask *"How do I use dbutils.jobs.taskValues.set to pass a list value from one Databricks notebook task to another?"*
+
+--- Cell 25 (code) ---
+# YOUR CODE HERE
+# Set task values: 'silver_record_count' and 'properties_processed'
+# Then print the values to verify
+
+
+================================================================================
+# 11-implement-lakeflow-jobs
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set Up the TelConnect Unity Catalog Structure
+
+In this exercise, you prepare the Unity Catalog foundation that the Lakeflow Job tasks will read from and write to. You create a catalog with three schemas following a medallion architecture pattern:
+
+- `bronze` — raw CDR records as ingested
+- `silver` — cleaned and validated CDR data
+- `gold` — aggregated network usage metrics for reporting
+
+--- Cell 2 (markdown) ---
+### ✅ Provided: Accept the job parameter for the processing date
+
+When this notebook runs as a Lakeflow Job task, the job passes the `processing_date` parameter automatically. The `dbutils.widgets` API makes that value available inside the notebook.
+
+Run the cell below to register the widget. When running manually, it defaults to today's date.
+
+--- Cell 3 (code) ---
+# ✅ Run this cell — registers the job parameter widget
+
+import datetime
+
+dbutils.widgets.text("processing_date", str(datetime.date.today()), "Processing Date (YYYY-MM-DD)")
+processing_date = dbutils.widgets.get("processing_date")
+
+print(f"Processing date: {processing_date}")
+
+--- Cell 4 (markdown) ---
+### ✅ Provided: Create the Unity Catalog structure
+
+Run the cell below to create the `telconnect_lab` catalog and the three medallion schemas. You will use these throughout the lab.
+
+
+--- Cell 5 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+--- Cell 6 (code) ---
+# ✅ Run this cell — creates the Unity Catalog structure
+
+catalog = "telconnect_lab"
+
+spark.sql(f"CREATE CATALOG IF NOT EXISTS {catalog} MANAGED LOCATION '{storage_root}' COMMENT 'TelConnect network analytics platform'")
+print(f"✅ Catalog '{catalog}' created.")
+
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.bronze COMMENT 'Raw ingested Call Detail Records'")
+print(f"✅ Schema '{catalog}.bronze' created.")
+
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.silver COMMENT 'Cleaned and validated CDR data'")
+print(f"✅ Schema '{catalog}.silver' created.")
+
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.gold COMMENT 'Aggregated network usage metrics for reporting'")
+print(f"✅ Schema '{catalog}.gold' created.")
+
+
+--- Cell 7 (markdown) ---
+## Exercise 2: Ingest Raw CDR Data (Bronze Layer)
+
+The Bronze layer stores raw Call Detail Records exactly as received. A sample CSV representing network events for a single processing day is provided. You load it into the workspace, register it as a Bronze Delta table, and verify the record count.
+
+--- Cell 8 (markdown) ---
+### ✅ Provided: Create the raw_uploads volume and download sample data
+
+Run the cell below to create the Unity Catalog volume and automatically download `telecom_cdrs.csv` from GitHub into the volume.
+
+
+--- Cell 9 (code) ---
+# ✅ Run this cell — creates the raw_uploads volume and downloads the sample CDR data
+
+import urllib.request
+
+spark.sql("CREATE VOLUME IF NOT EXISTS telconnect_lab.bronze.raw_uploads COMMENT 'Landing zone for raw CDR files'")
+print("✅ Volume telconnect_lab.bronze.raw_uploads is ready.")
+
+url = "https://raw.githubusercontent.com/MicrosoftLearning/DP-750T00-Implement-Data-Engineering-Solutions-using-Azure-Databricks/refs/heads/main/Allfiles/data/telecom_cdrs.csv"
+dest = "/Volumes/telconnect_lab/bronze/raw_uploads/telecom_cdrs.csv"
+urllib.request.urlretrieve(url, dest)
+print(f"✅ telecom_cdrs.csv downloaded to {dest}")
+
+
+--- Cell 10 (markdown) ---
+### ✅ Provided: Load the CDR CSV into a DataFrame
+
+Run the cell below to read the uploaded CSV into a Spark DataFrame. Inspect the output — note which records contain quality issues that you will clean in Exercise 3.
+
+
+--- Cell 11 (code) ---
+# ✅ Run this cell — loads the raw CDR CSV from the volume
+
+from pyspark.sql.types import (
+    StructType, StructField, StringType, IntegerType, DoubleType
+)
+
+cdr_schema = StructType([
+    StructField("call_id",           StringType(),  True),
+    StructField("caller_msisdn",     StringType(),  True),
+    StructField("callee_msisdn",     StringType(),  True),
+    StructField("call_start_time",   StringType(),  True),
+    StructField("call_end_time",     StringType(),  True),
+    StructField("duration_seconds",  IntegerType(), True),
+    StructField("call_type",         StringType(),  True),
+    StructField("call_status",       StringType(),  True),
+    StructField("network_type",      StringType(),  True),
+    StructField("cell_tower_id",     StringType(),  True),
+    StructField("region",            StringType(),  True),
+    StructField("roaming",           StringType(),  True),
+    StructField("data_mb",           DoubleType(),  True),
+    StructField("sms_count",         IntegerType(), True),
+])
+
+raw_df = (
+    spark.read
+    .option("header", True)
+    .schema(cdr_schema)
+    .csv("/Volumes/telconnect_lab/bronze/raw_uploads/telecom_cdrs.csv")
+)
+
+raw_df.display()
+print(f"\nRaw CDR records loaded: {raw_df.count()}")
+
+
+--- Cell 12 (markdown) ---
+### ✅ Provided: Write raw CDR data to a Bronze Delta table
+
+Run the cell below to persist `raw_df` as a managed Delta table in Unity Catalog. This is the starting point for all downstream cleaning and aggregation.
+
+
+--- Cell 13 (code) ---
+# ✅ Run this cell — writes raw CDR data to the Bronze Delta table
+
+raw_df.write.format("delta").mode("overwrite").saveAsTable("telconnect_lab.bronze.cdr_bronze")
+
+count = spark.table("telconnect_lab.bronze.cdr_bronze").count()
+print(f"✅ Bronze table written. Record count: {count}")
+
+
+--- Cell 14 (markdown) ---
+## Exercise 3: Clean and Validate CDR Data (Silver Layer)
+
+The Silver layer contains CDRs that have passed validation. In a production pipeline, only clean records flow downstream to aggregations and billing systems.
+
+Review the raw data carefully. You will find the following quality issues that must be corrected:
+
+| Issue | Example | Handling rule |
+|---|---|---|
+| Negative duration | CDR010 | Drop records where `duration_seconds < 0` |
+| Missing callee for VOICE/DATA calls | CDR007 | Drop VOICE and DATA records where `callee_msisdn` is null |
+| Zero-duration completed calls | Several | Drop VOICE records with `call_status = COMPLETED` and `duration_seconds = 0` |
+| Invalid call_type value | Check data | Keep only: `VOICE`, `DATA`, `SMS` |
+
+--- Cell 15 (code) ---
+# ✅ Run this cell — reads from the bronze table you created in Exercise 2
+
+bronze_df = spark.table("telconnect_lab.bronze.cdr_bronze")
+print(f"Bronze record count: {bronze_df.count()}")
+bronze_df.display()
+
+--- Cell 16 (markdown) ---
+### ✅ Provided: Apply cleaning rules and write to Silver
+
+Run the cell below. It applies the four data quality rules to `bronze_df` and writes the validated records to the Silver table. Review the printout to see how many records were dropped at each step.
+
+
+--- Cell 17 (code) ---
+# ✅ Run this cell — applies CDR cleaning rules and writes to Silver
+
+from pyspark.sql.functions import col
+
+bronze_count = bronze_df.count()
+
+silver_df = (
+    bronze_df
+    # Rule 1: Drop negative durations
+    .filter(col("duration_seconds") >= 0)
+    # Rule 2: Drop VOICE and DATA records with no callee
+    .filter(
+        ~((col("call_type").isin("VOICE", "DATA")) & col("callee_msisdn").isNull())
+    )
+    # Rule 3: Drop VOICE completed calls with zero duration
+    .filter(
+        ~((col("call_type") == "VOICE") & (col("call_status") == "COMPLETED") & (col("duration_seconds") == 0))
+    )
+    # Rule 4: Keep only valid call types
+    .filter(col("call_type").isin("VOICE", "DATA", "SMS"))
+)
+
+silver_df.write.format("delta").mode("overwrite").saveAsTable("telconnect_lab.silver.cdr_silver")
+
+silver_count = spark.table("telconnect_lab.silver.cdr_silver").count()
+print(f"✅ Silver table written.")
+print(f"   Bronze records : {bronze_count}")
+print(f"   Silver records : {silver_count}")
+print(f"   Records dropped: {bronze_count - silver_count}")
+
+
+--- Cell 18 (markdown) ---
+## Exercise 4: Aggregate Network Metrics (Gold Layer)
+
+The Gold layer contains aggregated metrics consumed by dashboards and operations teams. TelConnect's network operations centre needs a daily summary per region and network type showing:
+
+- Total calls handled
+- Total successful calls (`COMPLETED` status)
+- Call drop rate (percentage of calls that were `DROPPED`)
+- Average call duration (for `VOICE` calls only)
+- Total data transferred in MB (for `DATA` calls only)
+
+--- Cell 19 (code) ---
+# ✅ Run this cell — reads from the silver table
+
+silver_df = spark.table("telconnect_lab.silver.cdr_silver")
+print(f"Silver record count: {silver_df.count()}")
+
+--- Cell 20 (markdown) ---
+### ✅ Provided: Build the regional network summary
+
+Run the cell below. It aggregates the Silver CDR data by region and network type, computing the five operational metrics, and writes the result to the Gold table.
+
+
+--- Cell 21 (code) ---
+# ✅ Run this cell — aggregates CDR Silver data into the Gold network summary
+
+from pyspark.sql.functions import (
+    count, sum as spark_sum, avg, when, round as spark_round
+)
+
+gold_df = (
+    silver_df
+    .groupBy("region", "network_type")
+    .agg(
+        count("*").alias("total_calls"),
+        count(when(col("call_status") == "COMPLETED", 1)).alias("completed_calls"),
+        spark_round(
+            count(when(col("call_status") == "DROPPED", 1)) * 100.0 / count("*"), 2
+        ).alias("drop_rate_pct"),
+        spark_round(
+            avg(when((col("call_type") == "VOICE") & (col("duration_seconds") > 0), col("duration_seconds"))), 1
+        ).alias("avg_voice_duration_sec"),
+        spark_round(
+            spark_sum(when(col("call_type") == "DATA", col("data_mb"))), 2
+        ).alias("total_data_mb"),
+    )
+    .orderBy("region", "network_type")
+)
+
+gold_df.write.format("delta").mode("overwrite").saveAsTable("telconnect_lab.gold.network_summary")
+
+print(f"✅ Gold table written. Rows: {spark.table('telconnect_lab.gold.network_summary').count()}")
+spark.table("telconnect_lab.gold.network_summary").display()
+
+
+--- Cell 22 (markdown) ---
+## Exercise 5: Make the Notebook Job-Ready
+
+When this notebook runs as a Lakeflow Job task, it should communicate outcomes back to the job. Databricks provides two mechanisms:
+
+- **`dbutils.notebook.exit()`** — exits the notebook and passes a string value to any task that calls this notebook via the `Run Notebook` task type.
+- **`dbutils.jobs.taskValues.set()`** — stores a named value that downstream tasks in the same job run can retrieve.
+
+You use both here to make the notebook observable and chainable.
+
+--- Cell 23 (markdown) ---
+### ✅ Provided: Count Gold records and share the result with the job
+
+Run the cell below. It publishes the Gold row count as a task value (so downstream job tasks can read it) and exits the notebook with a structured JSON status string. This is what makes the notebook behave as a proper Lakeflow Job task.
+
+
+--- Cell 24 (code) ---
+# ✅ Run this cell — publishes results and exits the notebook as a job task
+
+import json
+
+gold_row_count = spark.table("telconnect_lab.gold.network_summary").count()
+
+# Share the count with downstream tasks in the same job run
+dbutils.jobs.taskValues.set(key="gold_row_count", value=gold_row_count)
+
+print(f"✅ Pipeline complete for processing_date={processing_date}. Gold rows: {gold_row_count}")
+
+# Exit with a structured status — readable from the job run timeline
+result = json.dumps({"status": "success", "processing_date": processing_date, "gold_rows": gold_row_count})
+dbutils.notebook.exit(result)
+
+
+================================================================================
+# 12-implement-development-lifecycle-processes-in-azure-databricks
+================================================================================
+
+--- Cell 1 (markdown) ---
+## Exercise 1: Set Up the Testing Environment
+
+In this exercise, you install the `pytest` library and review the transformation module you will be testing. The module processes raw order records through three stages: **filtering** invalid entries, **normalizing** status codes, and **computing** tax-inclusive totals.
+
+Run the cells in this exercise — they are fully provided. Your challenge begins in Exercise 2.
+
+--- Cell 2 (code) ---
+# ✅ Run this cell — installs pytest and creates the lab working directory
+%pip install pytest
+import os
+os.makedirs('/tmp/lab12', exist_ok=True)
+
+--- Cell 3 (markdown) ---
+### ✅ Provided: Create the transformation module
+
+Run the cell below to write the `transforms.py` module to `/tmp/lab12/`. The module exposes four functions:
+
+| Function | Description |
+|---|---|
+| `filter_valid_orders(df)` | Removes rows where `order_id` or `customer_id` is null |
+| `normalize_status(df)` | Converts `status` to lowercase and strips whitespace |
+| `calculate_total_with_tax(df, tax_rate=0.21)` | Adds a `total_with_tax` column |
+| `run_order_pipeline(df, tax_rate=0.21)` | Runs all three transforms in sequence |
+
+Review the code carefully — you will be writing tests for each function in the next exercise.
+
+--- Cell 4 (code) ---
+%%writefile /tmp/lab12/transforms.py
+import pandas as pd
+
+
+def filter_valid_orders(df):
+    """Remove orders where order_id or customer_id is null."""
+    return df.dropna(subset=['order_id', 'customer_id'])
+
+
+def normalize_status(df):
+    """Normalize status values to lowercase and strip whitespace."""
+    df = df.copy()
+    df['status'] = df['status'].str.lower().str.strip()
+    return df
+
+
+def calculate_total_with_tax(df, tax_rate=0.21):
+    """Add a total_with_tax column based on the given tax rate."""
+    df = df.copy()
+    df['total_with_tax'] = (df['total'] * (1 + tax_rate)).round(2)
+    return df
+
+
+def run_order_pipeline(df, tax_rate=0.21):
+    """Run the full order cleaning pipeline."""
+    df = filter_valid_orders(df)
+    df = normalize_status(df)
+    df = calculate_total_with_tax(df, tax_rate)
+    return df
+
+
+--- Cell 5 (markdown) ---
+### ✅ Provided: Verify the module loads correctly
+
+Run the cell below to import the module and confirm the functions are accessible before writing any tests.
+
+--- Cell 6 (code) ---
+# ✅ Run this cell — verifies the module imports correctly
+import sys, os
+os.makedirs('/tmp/lab12', exist_ok=True)
+sys.path.insert(0, '/tmp/lab12')
+
+from transforms import filter_valid_orders, normalize_status, calculate_total_with_tax, run_order_pipeline
+
+print("✅ transforms.py loaded successfully.")
+print("   Functions available:", [f.__name__ for f in [filter_valid_orders, normalize_status, calculate_total_with_tax, run_order_pipeline]])
+
+--- Cell 7 (markdown) ---
+## Exercise 2: Write Unit Tests
+
+In this exercise, you write **unit tests** for each of the three transformation functions using pytest.
+
+Use the sample dataset below as your pytest fixture:
+
+| order_id | customer_id | status | total |
+|---|---|---|---|
+| 1001 | C001 | Completed | 150.00 |
+| 1002 | C002 | PENDING | 200.50 |
+| `null` | C003 | cancelled | 75.00 |
+| 1004 | `null` | completed | 300.00 |
+| 1005 | C005 | `  Pending  ` | 125.75 |
+
+After filtering, **3 rows** remain (rows for `order_id` 1001, 1002, and 1005).
+
+> 🤖 **Genie Code:** Ask *"Help me write pytest unit tests for pandas functions called filter_valid_orders, normalize_status, and calculate_total_with_tax. Include a fixture that returns a sample DataFrame."*
+
+Fill in all `# TODO` blocks in the cell below, then run it to write the test file.
+
+--- Cell 8 (code) ---
+%%writefile /tmp/lab12/test_transforms.py
+import pytest
+import pandas as pd
+import sys
+sys.path.insert(0, '/tmp/lab12')
+from transforms import filter_valid_orders, normalize_status, calculate_total_with_tax
+
+# 🤖 Genie Code prompt:
+# "Help me write pytest unit tests for pandas functions called filter_valid_orders,
+#  normalize_status, and calculate_total_with_tax. Include a fixture that returns
+#  a sample DataFrame with 5 rows."
+
+
+@pytest.fixture
+def sample_orders():
+    # TODO: Create and return a pandas DataFrame with these values:
+    # order_id:    [1001,        1002,      None,        1004,        1005        ]
+    # customer_id: ['C001',      'C002',    'C003',      None,        'C005'      ]
+    # status:      ['Completed', 'PENDING', 'cancelled', 'completed', '  Pending  ']
+    # total:       [150.00,      200.50,    75.00,       300.00,      125.75      ]
+    pass
+
+
+# ── Tests for filter_valid_orders ─────────────────────────────────────────────
+
+def test_filter_removes_null_order_id(sample_orders):
+    # TODO: Call filter_valid_orders(sample_orders)
+    # Assert that the result contains no null values in the 'order_id' column.
+    pass
+
+
+def test_filter_removes_null_customer_id(sample_orders):
+    # TODO: Call filter_valid_orders(sample_orders)
+    # Assert that the result contains no null values in the 'customer_id' column.
+    pass
+
+
+def test_filter_retains_correct_row_count(sample_orders):
+    # TODO: Call filter_valid_orders(sample_orders)
+    # Assert that exactly 3 rows are returned (rows with order_id 1001, 1002, 1005).
+    pass
+
+
+# ── Tests for normalize_status ────────────────────────────────────────────────
+
+def test_normalize_status_lowercases_values(sample_orders):
+    # TODO: Call normalize_status(sample_orders)
+    # Assert that every value in the 'status' column equals its .lower() equivalent.
+    pass
+
+
+def test_normalize_status_strips_whitespace(sample_orders):
+    # TODO: Call normalize_status(sample_orders)
+    # Assert that every value in the 'status' column equals its .strip() equivalent.
+    pass
+
+
+# ── Tests for calculate_total_with_tax ────────────────────────────────────────
+
+def test_calculate_total_with_tax_adds_column(sample_orders):
+    # TODO: Call calculate_total_with_tax(sample_orders)
+    # Assert that a column named 'total_with_tax' exists in the result.
+    pass
+
+
+def test_calculate_total_with_tax_default_rate(sample_orders):
+    # TODO: Call calculate_total_with_tax(sample_orders) with the default rate (0.21).
+    # Assert that the first row's total_with_tax equals round(150.00 * 1.21, 2).
+    pass
+
+
+def test_calculate_total_with_tax_custom_rate(sample_orders):
+    # TODO: Call calculate_total_with_tax(sample_orders, tax_rate=0.10).
+    # Assert that the second row's total_with_tax equals round(200.50 * 1.10, 2).
+    pass
+
+
+--- Cell 9 (markdown) ---
+### ✅ Run the unit tests
+
+Run the cell below to execute your tests with pytest. **All 8 tests should pass.** If any fail, read the error output carefully, fix the failing test logic, re-run the `%%writefile` cell, then run the cell below again.
+
+--- Cell 10 (code) ---
+# ✅ Run this cell — executes all unit tests
+import sys
+sys.path.insert(0, '/tmp/lab12')
+import pytest
+
+retcode = pytest.main(['/tmp/lab12/test_transforms.py', '-v', '-p', 'no:cacheprovider'])
+assert retcode == 0, "❌ Unit tests failed. Review the output above and fix the failing tests."
+
+================================================================================
+# 13-monitor-troubleshoot-optimize-workloads-azure-databricks
+================================================================================
+
+--- Cell 1 (markdown) ---
+> ⚠️ **Before you start — attach the cluster**
+>
+> This lab requires a **classic compute cluster with Photon disabled**. Serverless compute does not support the Spark configuration options used in the exercises, and Photon automatically optimises away the skew and shuffle problems this lab is designed to expose — you will not see anything abnormal in the Spark UI if either is active.
+>
+> 1. In the compute selector at the top of this notebook, click **Connect**.
+> 2. Select the **`perf-lab`** cluster (created in the lab setup instructions — non-Photon runtime, `spark.databricks.photon.enabled false` set in Spark config).
+> 3. Wait until the cluster status shows **Running** before running any cells.
+
+--- Cell 2 (markdown) ---
+## Exercise 1: Set up your environment
+
+Before investigating performance problems you need data to work with. This exercise creates a Unity Catalog structure and generates two Delta tables:
+
+- **`perf_lab.data.transactions`** — 500 000 rows with an intentionally skewed `customer_id` column (~70 % of rows belong to a single customer)
+- **`perf_lab.data.customers`** — 200 rows (a small dimension table)
+
+Run all cells in this exercise from top to bottom before continuing.
+
+--- Cell 3 (markdown) ---
+### Task 1.1: Create the Unity Catalog structure
+
+This cell is provided — run it to create the catalog and schema.
+
+--- Cell 4 (code) ---
+# Since no default storage is enabled, we are inheriting the storage path from the default catalog's root.
+# Use the current catalog to reliably find the workspace default catalog,
+# regardless of its naming convention.
+default_catalog = spark.catalog.currentCatalog()
+
+storage_root = (
+    spark.sql(f"DESCRIBE CATALOG EXTENDED {default_catalog}")
+    .filter("info_name = 'Storage Root'")
+    .select("info_value")
+    .first()[0]
+)
+print (f"Storage root: {storage_root}")
+
+--- Cell 5 (code) ---
+# ✅ Run this cell — creates the catalog and schema
+spark.sql(f"CREATE CATALOG IF NOT EXISTS perf_lab MANAGED LOCATION '{storage_root}' COMMENT 'Performance troubleshooting lab'")
+spark.sql("CREATE SCHEMA IF NOT EXISTS perf_lab.data COMMENT 'Transaction data for performance exercises'")
+print("✅ Catalog and schema ready.")
+
+--- Cell 6 (markdown) ---
+### Task 1.2: Generate the transactions table
+
+The dataset is generated entirely in Spark — no external files are needed.
+
+**Intentional skew:** `rand(seed=42) < 0.70` routes approximately 70 % of all rows to `customer_001`. Every other row is distributed across `customer_002` through `customer_200`. You will see the consequences of this imbalance in Exercise 2.
+
+--- Cell 7 (code) ---
+# ✅ Run this cell — generates 500 000 transactions with a heavily skewed customer_id
+from pyspark.sql import functions as F
+
+n_rows = 500_000
+
+df_transactions = (
+    spark.range(n_rows)
+    .withColumn(
+        "customer_id",
+        F.when(F.rand(seed=42) < 0.70, F.lit("customer_001"))
+         .otherwise(
+             F.concat(
+                 F.lit("customer_"),
+                 F.lpad((F.floor(F.rand(seed=99) * 199) + 2).cast("string"), 3, "0")
+             )
+         )
+    )
+    .withColumn("amount",   F.round(F.rand(seed=7) * 999 + 1, 2))
+    .withColumn("txn_type", F.when(F.rand(seed=3) < 0.5, F.lit("purchase")).otherwise(F.lit("refund")))
+    .withColumn("txn_id",   F.concat(F.lit("txn_"), F.col("id").cast("string")))
+    .drop("id")
+)
+
+df_transactions.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.transactions")
+count = spark.table("perf_lab.data.transactions").count()
+print(f"✅ Written {count:,} rows to perf_lab.data.transactions")
+
+--- Cell 8 (markdown) ---
+### Task 1.3: Generate the customers table
+
+This small dimension table has 200 rows — one row per customer. It is tiny enough to fit comfortably in memory on a single executor. Keep that fact in mind; it will be important in Exercise 3.
+
+--- Cell 9 (code) ---
+# ✅ Run this cell — generates 200 customer dimension rows
+customer_rows = [
+    (f"customer_{i:03d}", f"Customer {i}", f"region_{(i % 5) + 1}")
+    for i in range(1, 201)
+]
+
+df_customers = spark.createDataFrame(customer_rows, ["customer_id", "name", "region"])
+df_customers.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.customers")
+print(f"✅ Written {df_customers.count()} rows to perf_lab.data.customers")
+
+--- Cell 10 (markdown) ---
+### Task 1.4: Verify the skew
+
+Run the cell below to confirm that the data is heavily imbalanced. The output shows the top customers by transaction count and their share of the total dataset.
+
+--- Cell 11 (code) ---
+# ✅ Run this cell — shows the distribution of rows across customer_id values
+df = spark.table("perf_lab.data.transactions")
+total = df.count()
+
+top_customers = (
+    df.groupBy("customer_id")
+      .agg(F.count("*").alias("txn_count"))
+      .withColumn("pct_of_total", F.round(F.col("txn_count") / total * 100, 1))
+      .orderBy(F.desc("txn_count"))
+      .limit(5)
+)
+
+print(f"Total rows: {total:,}")
+print("Top 5 customers by transaction count:")
+top_customers.show()
+
+--- Cell 12 (markdown) ---
+---
+
+## Exercise 2: Expose data skew
+
+To make skew clearly visible in the Spark UI, you need to turn off **Adaptive Query Execution (AQE)**. With AQE enabled, Databricks automatically splits oversized partitions at runtime, which masks the skew but also hides the problem in the UI.
+
+You will run two operations that both shuffle on `customer_id`:
+1. A **groupBy aggregation** — the shuffle routes ~70 % of rows to a single reducer task
+2. A **sort-merge join** between transactions and customers — auto-broadcast is disabled so Spark must shuffle both sides
+
+After running the cells below, **return to the lab instructions page** and follow the steps in **Part 2** to investigate the results in the Spark UI.
+
+--- Cell 13 (markdown) ---
+### Task 2.1: Disable AQE and set shuffle partitions
+
+--- Cell 14 (code) ---
+# ✅ Run this cell — disables AQE and auto-broadcast so skew is fully visible in the Spark UI
+spark.conf.set("spark.databricks.optimizer.adaptive.enabled", "false")
+spark.conf.set("spark.sql.adaptive.enabled",                 "false")
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold",       "-1")    # Force sort-merge join
+spark.conf.set("spark.sql.shuffle.partitions",               "50")
+
+print("AQE disabled | auto-broadcast disabled | shuffle partitions: 50")
+
+--- Cell 15 (markdown) ---
+### Task 2.2: Run a skewed aggregation
+
+The `groupBy("customer_id")` triggers a shuffle. Because `customer_001` has ~350 000 rows, one partition (and therefore one task) receives roughly 70 % of all data. All other partitions share the remaining 30 %.
+
+--- Cell 16 (code) ---
+# ✅ Run this cell — triggers a skewed shuffle on customer_id
+import time
+
+df_tx = spark.table("perf_lab.data.transactions")
+
+start = time.time()
+result_agg = (
+    df_tx
+    .groupBy("customer_id", "txn_type")
+    .agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("txn_count"),
+        F.avg("amount").alias("avg_amount")
+    )
+)
+result_agg.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.agg_skewed")
+elapsed = time.time() - start
+print(f"✅ Aggregation complete in {elapsed:.1f}s — {spark.table('perf_lab.data.agg_skewed').count()} rows")
+
+--- Cell 17 (markdown) ---
+### Task 2.3: Run a skewed sort-merge join
+
+Auto-broadcast is disabled (`autoBroadcastJoinThreshold = -1`), so Spark must shuffle **both** sides of the join and use a sort-merge strategy. The skewed `customer_id` distribution means one reducer task receives a disproportionately large partition from the transactions side.
+
+--- Cell 18 (code) ---
+# ✅ Run this cell — triggers a skewed sort-merge join
+df_tx   = spark.table("perf_lab.data.transactions")
+df_cust = spark.table("perf_lab.data.customers")
+
+start = time.time()
+result_join = (
+    df_tx
+    .join(df_cust, "customer_id", "left")
+    .groupBy("region", "txn_type")
+    .agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("txn_count")
+    )
+)
+result_join.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.join_skewed")
+elapsed = time.time() - start
+print(f"✅ Sort-merge join complete in {elapsed:.1f}s — {spark.table('perf_lab.data.join_skewed').count()} rows")
+
+--- Cell 19 (markdown) ---
+> **Now return to the lab instructions page and follow the steps in Part 2 to investigate the Spark UI.**
+>
+> When you have finished your investigation, continue with Exercise 3 below.
+
+--- Cell 20 (markdown) ---
+---
+
+## Exercise 3: Fix the data skew
+
+You have two complementary tools for addressing skew:
+
+| Technique | How it works | Best when |
+|-----------|-------------|----------|
+| **Broadcast join** | Sends the small table to every executor — no shuffle of either side | One side of a join is small |
+| **AQE skew join** | Splits oversized shuffle partitions dynamically at runtime | General-purpose skew in joins and aggregations |
+
+In this exercise you will apply both.
+
+--- Cell 21 (markdown) ---
+### 🎯 Task 3.1: Fix the join using a broadcast hint
+
+The `customers` table has only **200 rows**. It easily fits in memory on every executor. Broadcasting it eliminates the shuffle of the `customers` side entirely and means the `customer_id` skew on the transactions side no longer causes any task imbalance.
+
+**Your task:** Rewrite the join from Task 2.3 to use a broadcast hint for the `customers` DataFrame.
+
+💡 **Hints:**
+- PySpark syntax: wrap the small DataFrame with `F.broadcast(df)`
+- SQL hint syntax: `/*+ BROADCAST(alias) */` inside a SQL string
+- The broadcast hint tells Spark to skip the sort-merge strategy and instead copy the small table to every worker
+
+🤖 **Genie Code prompt:**
+> *"How do I use a broadcast join hint in PySpark to avoid shuffling a small dimension table?"*
+
+--- Cell 22 (code) ---
+# 🎯 YOUR TASK: Rewrite this join to use a broadcast hint for df_cust
+# Measure the elapsed time and compare it with the sort-merge join in Task 2.3
+import time
+from pyspark.sql import functions as F
+
+df_tx   = spark.table("perf_lab.data.transactions")
+df_cust = spark.table("perf_lab.data.customers")
+
+start = time.time()
+
+# TODO: replace the plain join below with a broadcast join
+result_broadcast = (
+    df_tx
+    .join(df_cust, "customer_id", "left")   # ← apply the broadcast hint here
+    .groupBy("region", "txn_type")
+    .agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("txn_count")
+    )
+)
+result_broadcast.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.join_broadcast")
+elapsed = time.time() - start
+print(f"Join complete in {elapsed:.1f}s — {spark.table('perf_lab.data.join_broadcast').count()} rows")
+
+--- Cell 23 (markdown) ---
+### Task 3.2: Re-enable AQE and observe automatic skew handling
+
+With `spark.sql.adaptive.skewJoin.enabled = true`, AQE automatically detects skewed partitions during a shuffle and splits them into smaller sub-tasks. This handles skew without any code changes — useful when you cannot (or do not want to) broadcast a table.
+
+The cell below re-enables AQE and re-runs the original sort-merge join from Task 2.3 (no broadcast hint). Compare the execution time and check the Spark UI to see how AQE splits the skewed partition.
+
+--- Cell 24 (code) ---
+# ✅ Run this cell — re-enables AQE and re-runs the sort-merge join
+spark.conf.set("spark.databricks.optimizer.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.enabled",                 "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled",        "true")
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold",       "10485760")  # Reset to 10 MB
+
+print("AQE enabled | skewJoin enabled | auto-broadcast threshold: 10 MB")
+
+df_tx   = spark.table("perf_lab.data.transactions")
+df_cust = spark.table("perf_lab.data.customers")
+
+start = time.time()
+result_aqe = (
+    df_tx
+    .join(df_cust, "customer_id", "left")
+    .groupBy("region", "txn_type")
+    .agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("txn_count")
+    )
+)
+result_aqe.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.join_aqe")
+elapsed = time.time() - start
+print(f"✅ AQE join complete in {elapsed:.1f}s — {spark.table('perf_lab.data.join_aqe').count()} rows")
+print("\nCheck the Spark UI — AQE splits the skewed partition into multiple sub-tasks.")
+
+--- Cell 25 (markdown) ---
+---
+
+## Exercise 4: Expose excessive shuffle
+
+Shuffle is unavoidable when Spark needs to redistribute data — for example, for a `groupBy` or a `join`. However, it is easy to introduce *unnecessary* shuffles by calling `repartition()` before or after operations that already involve a shuffle.
+
+The pipeline in this exercise performs a `groupBy` followed by a `join` and a `sort`, but adds **three extra `repartition()` calls** that each trigger a full shuffle for no benefit. The Spark UI will show multiple **Exchange** nodes in the DAG — more than the computation actually requires.
+
+Run the cell below, then **return to the lab instructions page** and follow the steps in **Part 4** to investigate the shuffle metrics.
+
+--- Cell 26 (markdown) ---
+### Task 4.1: Reset configs and run the shuffle-heavy pipeline
+
+--- Cell 27 (code) ---
+# ✅ Run this cell — disables AQE and auto-broadcast so all shuffles are visible
+spark.conf.set("spark.databricks.optimizer.adaptive.enabled", "false")
+spark.conf.set("spark.sql.adaptive.enabled",                 "false")
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold",       "-1")
+spark.conf.set("spark.sql.shuffle.partitions",               "200")
+
+print("AQE disabled | auto-broadcast disabled | shuffle partitions: 200")
+
+--- Cell 28 (code) ---
+# ✅ Run this cell — shuffle-heavy pipeline with unnecessary repartitions
+#
+# Shuffle 1: repartition(100, "txn_type")     — upfront repartition before groupBy (not needed)
+# Shuffle 2: groupBy aggregation              — necessary shuffle on customer_id
+# Shuffle 3: repartition(200, "customer_id")  — re-shuffle before join (not needed)
+# Shuffle 4: sort-merge join with customers   — shuffle because broadcast is disabled
+# Shuffle 5: repartition(50)                  — post-join repartition (not needed)
+# Shuffle 6: orderBy                          — necessary global sort
+
+df_tx   = spark.table("perf_lab.data.transactions")
+df_cust = spark.table("perf_lab.data.customers")
+
+start = time.time()
+result_inefficient = (
+    df_tx
+    .repartition(100, "txn_type")                       # Shuffle 1: unnecessary
+    .groupBy("customer_id", "txn_type")
+    .agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("txn_count"),
+        F.avg("amount").alias("avg_amount")
+    )
+    .repartition(200, "customer_id")                    # Shuffle 3: unnecessary
+    .join(df_cust, "customer_id", "left")               # Shuffle 4: sort-merge (broadcast disabled)
+    .repartition(50)                                    # Shuffle 5: unnecessary
+    .orderBy("region", "txn_type")                      # Shuffle 6: necessary
+)
+result_inefficient.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.results_inefficient")
+elapsed = time.time() - start
+print(f"✅ Inefficient pipeline complete in {elapsed:.1f}s")
+print(f"   Rows written: {spark.table('perf_lab.data.results_inefficient').count():,}")
+print("\nNow return to the lab instructions page and investigate the Spark UI for Part 4.")
+
+--- Cell 29 (markdown) ---
+> **Return to the lab instructions page and follow the steps in Part 4 to investigate the shuffle metrics.**
+>
+> When you have finished your investigation, continue with Exercise 5 below.
+
+--- Cell 30 (markdown) ---
+---
+
+## Exercise 5: Reduce shuffle overhead
+
+The pipeline in Exercise 4 performs a `groupBy → join → sort`. That computation fundamentally requires **two** shuffles: one for the aggregation and one for the global sort. Everything else is overhead.
+
+### 🎯 Challenge
+
+Rewrite the pipeline to minimise the number of shuffles. Your optimised version should:
+
+1. **Remove all unnecessary `repartition()` calls** — a `groupBy`, `join`, or `orderBy` already moves data; pre-shuffling does not help and only adds extra network I/O.
+2. **Use a broadcast join** for the `customers` table to eliminate the sort-merge shuffle entirely.
+3. **Re-enable AQE** before running so Spark can further optimise partition sizes dynamically.
+4. **Keep the `orderBy`** — the output must still be sorted.
+
+Measure the elapsed time and compare it with the Exercise 4 runtime.
+
+💡 **Hints:**
+- Every call to `repartition()` triggers a full shuffle — only keep it when you have a specific reason (e.g., controlling the number of output files written to storage).
+- `customers` has 200 rows. Use `F.broadcast(df_cust)` to copy it to every executor.
+- After the broadcast join, only the `orderBy` shuffle remains — that is the minimum for a sorted result.
+
+🤖 **Genie Code prompt:**
+> *"I have a PySpark pipeline with multiple repartition() calls before a groupBy and a join. Help me identify which repartitions are unnecessary and rewrite the pipeline to minimise the number of shuffles. Also apply a broadcast join for a small dimension table."*
+
+--- Cell 31 (code) ---
+# 🎯 YOUR TASK: Rewrite the pipeline from Exercise 4 to minimise shuffle
+#
+# Re-enable AQE and auto-broadcast, then write an optimised version of the pipeline.
+# Time it and compare with Exercise 4.
+
+# Step 1: Re-enable AQE and broadcast threshold
+# TODO: set spark.databricks.optimizer.adaptive.enabled and spark.sql.adaptive.enabled to true
+# TODO: reset spark.sql.autoBroadcastJoinThreshold to 10485760 (10 MB)
+
+df_tx   = spark.table("perf_lab.data.transactions")
+df_cust = spark.table("perf_lab.data.customers")
+
+start = time.time()
+
+# Step 2: Write the optimised pipeline
+# TODO: remove unnecessary repartitions
+# TODO: apply F.broadcast() to the customers join
+result_optimised = (
+    df_tx
+    # ... your code here ...
+)
+result_optimised.write.format("delta").mode("overwrite").saveAsTable("perf_lab.data.results_optimised")
+elapsed = time.time() - start
+print(f"Optimised pipeline complete in {elapsed:.1f}s")
+print(f"Rows written: {spark.table('perf_lab.data.results_optimised').count():,}")
+print("\nCompare in the Spark UI: fewer Exchange nodes, less Shuffle Read/Write per stage.")
+
+--- Cell 32 (markdown) ---
+---
+
+## Cleanup (optional)
+
+Run the cell below to remove all lab resources from Unity Catalog once you have finished.
+
+--- Cell 33 (code) ---
+# Uncomment and run to remove all lab resources
+# spark.sql("DROP CATALOG IF EXISTS perf_lab CASCADE")
+# print("✅ Lab resources cleaned up")
